@@ -353,7 +353,7 @@ async def start_deliberation(session_id: str):
 @api_router.post("/meetings/{session_id}/analyze-idea/{idea_index}")
 async def analyze_idea(session_id: str, idea_index: int):
     """Phase 2: Analyze a specific idea with all personas"""
-    meeting = await db.meetings.find_one({"id": session_id})
+    meeting = await db.meetings.find_one({"id": session_id}, {"_id": 0})
     if not meeting:
         raise HTTPException(status_code=404, detail="Meeting not found")
     
