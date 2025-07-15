@@ -400,7 +400,7 @@ async def finalize_meeting(session_id: str):
 @api_router.get("/meetings/{session_id}/report")
 async def get_final_report(session_id: str):
     """Get the final comprehensive report"""
-    meeting = await db.meetings.find_one({"id": session_id})
+    meeting = await db.meetings.find_one({"id": session_id}, {"_id": 0})
     if not meeting:
         raise HTTPException(status_code=404, detail="Meeting not found")
     
