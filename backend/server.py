@@ -378,7 +378,7 @@ async def analyze_idea(session_id: str, idea_index: int):
 @api_router.post("/meetings/{session_id}/finalize")
 async def finalize_meeting(session_id: str):
     """Phase 3 & 4: Select winner and generate final report"""
-    meeting = await db.meetings.find_one({"id": session_id})
+    meeting = await db.meetings.find_one({"id": session_id}, {"_id": 0})
     if not meeting:
         raise HTTPException(status_code=404, detail="Meeting not found")
     
