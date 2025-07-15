@@ -6,15 +6,20 @@ import { Badge } from "../components/ui/badge";
 import { ScrollArea } from "../components/ui/scroll-area";
 import { Progress } from "../components/ui/progress";
 import { useNavigate } from "react-router-dom";
-import { mockMeetingData } from "../data/mockData";
+import axios from "axios";
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
 
 export default function MeetingRoom() {
   const [meetingData, setMeetingData] = useState(null);
-  const [currentPhase, setCurrentPhase] = useState('opening');
+  const [meetingId, setMeetingId] = useState(null);
+  const [currentPhase, setCurrentPhase] = useState('creating');
   const [messages, setMessages] = useState([]);
-  const [currentSpeaker, setCurrentSpeaker] = useState(null);
-  const [motionStatus, setMotionStatus] = useState(null);
-  const [votes, setVotes] = useState({});
+  const [ideas, setIdeas] = useState([]);
+  const [currentIdeaIndex, setCurrentIdeaIndex] = useState(0);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [finalReport, setFinalReport] = useState(null);
   const [progress, setProgress] = useState(0);
   const [userMessage, setUserMessage] = useState("");
   const navigate = useNavigate();
@@ -25,238 +30,148 @@ export default function MeetingRoom() {
     if (stored) {
       const parsed = JSON.parse(stored);
       setMeetingData(parsed);
-      initializeMeeting(parsed);
+      createMeeting(parsed);
     } else {
-      // Use mock data if no stored data
-      setMeetingData(mockMeetingData);
-      initializeMeeting(mockMeetingData);
+      navigate('/');
     }
-  }, []);
+  }, [navigate]);
 
-  const initializeMeeting = (topic) => {
-    const openingMessage = {
-      id: 1,
-      speaker: "The EGO",
-      role: "Mediator",
-      content: `🏛️ The Parliamentarium is now in session. We convene to deliberate upon: "${topic.topic}". ${topic.description ? `The matter is described as: ${topic.description}` : ''} Let us proceed with sacred discourse.`,
-      timestamp: new Date().toISOString(),
-      type: 'system'
-    };
-    
-    setMessages([openingMessage]);
-    setCurrentSpeaker("The EGO");
-    
-    // Simulate meeting progression
-    setTimeout(() => simulateMeetingFlow(topic), 2000);
+  const createMeeting = async (topicData) => {
+    try {
+      setIsProcessing(true);
+      setCurrentPhase('creating');
+      
+      const response = await axios.post(`${API}/meetings`, {
+        topic: topicData.topic,
+        description: topicData.description,
+        proposer: topicData.proposedBy
+      });
+      
+      setMeetingId(response.data.id);
+      addMessage("System", "🏛️ The Parliamentarium is now in session. Initializing sacred discourse...", "system");
+      
+      // Start deliberation
+      await startDeliberation(response.data.id);
+    } catch (error) {
+      console.error('Error creating meeting:', error);
+      addMessage("System", "❌ Failed to convene the parliament. Please try again.", "error");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
-  const simulateMeetingFlow = (topic) => {
-    let messageId = 2;
-    const phases = ['opening', 'discussion', 'motion', 'voting', 'conclusion'];
-    let currentPhaseIndex = 0;
-
-    const speakers = [
-      { name: "The Mouse", role: "Historian", persona: "historical" },
-      { name: "The Dolphin", role: "Prognosticator", persona: "futuristic" },
-      { name: "The Patternist", role: "Analyst", persona: "analytical" },
-      { name: "The Contextualist", role: "Synthesizer", persona: "contextual" },
-      { name: "The Superscholar", role: "Meta Agent", persona: "academic" },
-      { name: "The Diviner", role: "Scryer", persona: "mystical" },
-      { name: "The Naysayer", role: "7th Seat", persona: "contrarian" },
-      { name: "The ID", role: "Primal Flame", persona: "impulsive" },
-      { name: "The SUPEREGO", role: "Moral Sentinel", persona: "ethical" }
-    ];
-
-    const generateResponse = (speaker, topic, phase) => {
-      const responses = {
-        historical: [
-          `In the annals of our discourse, similar matters have arisen. The precedent suggests...`,
-          `History teaches us that such decisions require careful consideration of past outcomes...`,
-          `The recursive nature of this topic echoes ancient deliberations...`
-        ],
-        futuristic: [
-          `The emergent patterns suggest this decision will cascade through future scenarios...`,
-          `My prognostications indicate three possible outcomes branching from this choice...`,
-          `The temporal implications of this matter extend beyond our current horizon...`
-        ],
-        analytical: [
-          `I observe systematic patterns in the data that suggest...`,
-          `The energetic loops in this proposal create resonance with...`,
-          `Cross-referencing symbolic structures reveals...`
-        ],
-        contextual: [
-          `Grounding this in ecological reality, we must consider...`,
-          `The emotional resonance of this choice affects...`,
-          `Synthesizing these perspectives with real-world implications...`
-        ],
-        academic: [
-          `From an epistemological standpoint, this matter intersects with...`,
-          `The cybernetic implications translate through semiotic channels...`,
-          `Meta-analysis reveals underlying structural considerations...`
-        ],
-        mystical: [
-          `The symbols speak of hidden truths in this matter...`,
-          `My intuitive sight reveals non-linear connections...`,
-          `The sacred geometry of this decision suggests...`
-        ],
-        contrarian: [
-          `I must challenge the assumptions underlying this proposal...`,
-          `The sacred resistance emerges to question...`,
-          `Before we proceed, consider the counterarguments...`
-        ],
-        impulsive: [
-          `The immediate desire is clear - we must act now...`,
-          `Pleasure principle demands we choose the path of...`,
-          `Why hesitate? The instinct is obvious...`
-        ],
-        ethical: [
-          `Moral imperatives require us to consider...`,
-          `The highest standards demand we examine...`,
-          `Justice and righteousness guide us toward...`
-        ]
-      };
+  const startDeliberation = async (sessionId) => {
+    try {
+      setIsProcessing(true);
+      setCurrentPhase('inspiration');
+      setProgress(10);
       
-      return responses[speaker.persona][Math.floor(Math.random() * responses[speaker.persona].length)] + 
-             ` regarding "${topic.topic}".`;
-    };
+      addMessage("The EGO", "🔮 Gathering inspiration from all council members...", "system");
+      
+      const response = await axios.post(`${API}/meetings/${sessionId}/start-deliberation`);
+      setIdeas(response.data.ideas);
+      
+      addMessage("The EGO", `✨ ${response.data.ideas.length} unique ideas have been gathered from the council. Now begins the sacred analysis...`, "system");
+      setProgress(25);
+      
+      // Start analyzing ideas
+      await analyzeAllIdeas(sessionId, response.data.ideas);
+    } catch (error) {
+      console.error('Error starting deliberation:', error);
+      addMessage("System", "❌ Failed to gather council wisdom. Please try again.", "error");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
-    const addMessage = (speaker, content, type = 'discussion') => {
-      const message = {
-        id: messageId++,
-        speaker: speaker.name,
-        role: speaker.role,
-        content: content,
-        timestamp: new Date().toISOString(),
-        type: type
-      };
+  const analyzeAllIdeas = async (sessionId, ideasList) => {
+    try {
+      setCurrentPhase('analysis');
       
-      setMessages(prev => [...prev, message]);
-      setCurrentSpeaker(speaker.name);
-      setProgress(prev => Math.min(prev + 8, 100));
-    };
-
-    const progressMeeting = () => {
-      if (currentPhaseIndex >= phases.length) return;
-      
-      const phase = phases[currentPhaseIndex];
-      setCurrentPhase(phase);
-      
-      switch (phase) {
-        case 'opening':
-          setTimeout(() => {
-            currentPhaseIndex++;
-            progressMeeting();
-          }, 3000);
-          break;
-          
-        case 'discussion':
-          speakers.forEach((speaker, index) => {
-            setTimeout(() => {
-              addMessage(speaker, generateResponse(speaker, topic, phase));
-            }, index * 4000);
+      for (let i = 0; i < ideasList.length; i++) {
+        const idea = ideasList[i];
+        setCurrentIdeaIndex(i);
+        
+        addMessage("The EGO", `🔍 Now analyzing: "${idea.idea}" (proposed by ${idea.persona_name})`, "motion");
+        
+        const response = await axios.post(`${API}/meetings/${sessionId}/analyze-idea/${i}`);
+        const analyzedIdea = response.data.analyzed_idea;
+        
+        // Update ideas state
+        setIdeas(prev => {
+          const updated = [...prev];
+          updated[i] = analyzedIdea;
+          return updated;
+        });
+        
+        // Show analysis results
+        addMessage("The EGO", `📊 Analysis complete! Average score: ${analyzedIdea.average_score}/10`, "voting");
+        
+        // Show some persona responses
+        if (analyzedIdea.scores && analyzedIdea.scores.length > 0) {
+          const sampleResponses = analyzedIdea.scores.slice(0, 3);
+          sampleResponses.forEach(score => {
+            addMessage(score.persona_name, `${score.analysis} (Score: ${score.score}/10)`, "discussion");
           });
-          
-          setTimeout(() => {
-            currentPhaseIndex++;
-            progressMeeting();
-          }, speakers.length * 4000 + 2000);
-          break;
-          
-        case 'motion':
-          setTimeout(() => {
-            addMessage(
-              { name: "The EGO", role: "Mediator" },
-              `I move to formalize our position on "${topic.topic}". Do I hear a second?`,
-              'motion'
-            );
-            setMotionStatus('seconded');
-          }, 1000);
-          
-          setTimeout(() => {
-            addMessage(
-              { name: "The Superscholar", role: "Meta Agent" },
-              `I second the motion. Let us proceed to voting.`,
-              'motion'
-            );
-            currentPhaseIndex++;
-            progressMeeting();
-          }, 3000);
-          break;
-          
-        case 'voting':
-          setTimeout(() => {
-            addMessage(
-              { name: "The EGO", role: "Mediator" },
-              `The vote is now open. All in favor, signify by saying "Aye".`,
-              'voting'
-            );
-            
-            // Simulate voting
-            const voteResults = {};
-            speakers.forEach(speaker => {
-              voteResults[speaker.name] = Math.random() > 0.3 ? 'aye' : 'nay';
-            });
-            setVotes(voteResults);
-            
-            setTimeout(() => {
-              const ayes = Object.values(voteResults).filter(vote => vote === 'aye').length;
-              const nays = Object.values(voteResults).filter(vote => vote === 'nay').length;
-              
-              addMessage(
-                { name: "The EGO", role: "Mediator" },
-                `The vote is complete. Ayes: ${ayes}, Nays: ${nays}. The motion ${ayes > nays ? 'passes' : 'fails'}.`,
-                'voting'
-              );
-              
-              currentPhaseIndex++;
-              progressMeeting();
-            }, 2000);
-          }, 1000);
-          break;
-          
-        case 'conclusion':
-          setTimeout(() => {
-            addMessage(
-              { name: "The EGO", role: "Mediator" },
-              `The Parliamentarium has reached its decision. The sacred discourse is concluded. May wisdom guide our actions.`,
-              'conclusion'
-            );
-            setProgress(100);
-          }, 1000);
-          break;
+        }
+        
+        setProgress(25 + (i + 1) * (50 / ideasList.length));
+        
+        // Small delay between analyses
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
+      
+      // Finalize meeting
+      await finalizeMeeting(sessionId);
+    } catch (error) {
+      console.error('Error analyzing ideas:', error);
+      addMessage("System", "❌ Error during analysis phase. Please try again.", "error");
+    }
+  };
+
+  const finalizeMeeting = async (sessionId) => {
+    try {
+      setCurrentPhase('finalization');
+      setProgress(80);
+      
+      addMessage("The EGO", "⚖️ Selecting the champion idea and preparing final report...", "system");
+      
+      const response = await axios.post(`${API}/meetings/${sessionId}/finalize`);
+      setFinalReport(response.data.final_report);
+      
+      const winner = response.data.final_report.winning_idea;
+      addMessage("The EGO", `🏆 The council has spoken! Winner: "${winner.idea}" (${winner.persona_name}) - Score: ${winner.average_score}/10`, "conclusion");
+      
+      setCurrentPhase('completed');
+      setProgress(100);
+      
+    } catch (error) {
+      console.error('Error finalizing meeting:', error);
+      addMessage("System", "❌ Error during finalization. Please try again.", "error");
+    }
+  };
+
+  const addMessage = (speaker, content, type = 'discussion') => {
+    const message = {
+      id: Date.now(),
+      speaker,
+      content,
+      timestamp: new Date().toISOString(),
+      type
     };
-    
-    progressMeeting();
+    setMessages(prev => [...prev, message]);
   };
 
   const handleUserMessage = () => {
     if (!userMessage.trim()) return;
     
-    const message = {
-      id: messages.length + 1,
-      speaker: "The Questioner",
-      role: "Human Participant",
-      content: userMessage,
-      timestamp: new Date().toISOString(),
-      type: 'user'
-    };
-    
-    setMessages(prev => [...prev, message]);
+    addMessage("The Questioner", userMessage, "user");
     setUserMessage("");
     
-    // Simulate response
+    // Simple acknowledgment for now
     setTimeout(() => {
-      const response = {
-        id: messages.length + 2,
-        speaker: "The EGO",
-        role: "Mediator",
-        content: `The Questioner raises an interesting point. The council acknowledges your contribution to our deliberations.`,
-        timestamp: new Date().toISOString(),
-        type: 'response'
-      };
-      setMessages(prev => [...prev, response]);
-    }, 1500);
+      addMessage("The EGO", "The council acknowledges your input, mortal observer.", "response");
+    }, 1000);
   };
 
   useEffect(() => {
@@ -269,21 +184,33 @@ export default function MeetingRoom() {
       discussion: 'bg-gray-800/50 border-gray-600/30',
       motion: 'bg-blue-900/30 border-blue-500/30',
       voting: 'bg-green-900/30 border-green-500/30',
-      conclusion: 'bg-gold-900/30 border-gold-500/30',
-      user: 'bg-amber-900/30 border-amber-500/30'
+      conclusion: 'bg-yellow-900/30 border-yellow-500/30',
+      user: 'bg-amber-900/30 border-amber-500/30',
+      error: 'bg-red-900/30 border-red-500/30'
     };
     return styles[type] || styles.discussion;
   };
 
   const getPhaseIcon = (phase) => {
     const icons = {
-      opening: '🏛️',
-      discussion: '💭',
-      motion: '📜',
-      voting: '🗳️',
-      conclusion: '⚖️'
+      creating: '🏗️',
+      inspiration: '💡',
+      analysis: '🔍',
+      finalization: '⚖️',
+      completed: '✅'
     };
     return icons[phase] || '🔮';
+  };
+
+  const getPhaseTitle = (phase) => {
+    const titles = {
+      creating: 'Convening Parliament',
+      inspiration: 'Gathering Ideas',
+      analysis: 'Sacred Analysis',
+      finalization: 'Final Deliberation',
+      completed: 'Session Complete'
+    };
+    return titles[phase] || 'Processing';
   };
 
   return (
@@ -312,7 +239,7 @@ export default function MeetingRoom() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             {getPhaseIcon(currentPhase)} 
-            Current Phase: {currentPhase.charAt(0).toUpperCase() + currentPhase.slice(1)}
+            Current Phase: {getPhaseTitle(currentPhase)}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -325,20 +252,18 @@ export default function MeetingRoom() {
               <Progress value={progress} className="h-2 bg-gray-700" />
             </div>
             
-            {currentSpeaker && (
+            {isProcessing && (
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-400">Current Speaker:</span>
-                <Badge className="bg-purple-600/20 text-purple-300">
-                  {currentSpeaker}
-                </Badge>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-400"></div>
+                <span className="text-sm text-gray-400">Processing...</span>
               </div>
             )}
             
-            {motionStatus && (
+            {currentPhase === 'analysis' && (
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-400">Motion Status:</span>
+                <span className="text-sm text-gray-400">Analyzing Idea:</span>
                 <Badge className="bg-blue-600/20 text-blue-300">
-                  {motionStatus}
+                  {currentIdeaIndex + 1} of {ideas.length}
                 </Badge>
               </div>
             )}
@@ -362,9 +287,6 @@ export default function MeetingRoom() {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-purple-300">{message.speaker}</span>
-                      <Badge className="bg-gray-600/20 text-gray-300 text-xs">
-                        {message.role}
-                      </Badge>
                     </div>
                     <span className="text-xs text-gray-400">
                       {new Date(message.timestamp).toLocaleTimeString()}
@@ -379,22 +301,64 @@ export default function MeetingRoom() {
         </CardContent>
       </Card>
 
-      {/* Voting Results */}
-      {Object.keys(votes).length > 0 && (
+      {/* Ideas Summary */}
+      {ideas.length > 0 && (
         <Card className="bg-gray-800/50 border-green-500/30 mb-6">
           <CardHeader>
-            <CardTitle>🗳️ Voting Results</CardTitle>
+            <CardTitle>💡 Council Ideas & Scores</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {Object.entries(votes).map(([speaker, vote]) => (
-                <div key={speaker} className="flex items-center justify-between p-2 bg-gray-700/50 rounded">
-                  <span className="text-sm">{speaker}</span>
-                  <Badge className={vote === 'aye' ? 'bg-green-600/20 text-green-300' : 'bg-red-600/20 text-red-300'}>
-                    {vote.toUpperCase()}
-                  </Badge>
+            <div className="space-y-3">
+              {ideas.map((idea, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-700/50 rounded">
+                  <div className="flex-1">
+                    <div className="font-semibold text-purple-300">{idea.persona_name}</div>
+                    <div className="text-sm text-gray-300 mt-1">{idea.idea}</div>
+                  </div>
+                  <div className="text-right">
+                    <Badge className={`ml-2 ${idea.average_score >= 7 ? 'bg-green-600/20 text-green-300' : 
+                      idea.average_score >= 5 ? 'bg-yellow-600/20 text-yellow-300' : 
+                      'bg-red-600/20 text-red-300'}`}>
+                      {idea.average_score > 0 ? `${idea.average_score}/10` : 'Analyzing...'}
+                    </Badge>
+                  </div>
                 </div>
               ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Final Report */}
+      {finalReport && (
+        <Card className="bg-gray-800/50 border-gold-500/30 mb-6">
+          <CardHeader>
+            <CardTitle>🏆 Final Parliamentary Report</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-semibold text-yellow-400 mb-2">Winning Idea</h3>
+                <div className="bg-yellow-900/20 p-3 rounded">
+                  <div className="font-bold">{finalReport.winning_idea.persona_name}</div>
+                  <div className="text-sm mt-1">{finalReport.winning_idea.idea}</div>
+                  <div className="text-xs text-yellow-400 mt-2">Score: {finalReport.winning_idea.average_score}/10</div>
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="font-semibold text-blue-400 mb-2">Implementation Plan</h3>
+                <div className="bg-blue-900/20 p-3 rounded text-sm whitespace-pre-wrap">
+                  {finalReport.implementation_plan}
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="font-semibold text-green-400 mb-2">Follow-up Questions</h3>
+                <div className="bg-green-900/20 p-3 rounded text-sm whitespace-pre-wrap">
+                  {finalReport.follow_up_questions}
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
