@@ -163,19 +163,23 @@ async def get_persona_response(persona_id: str, message: str, context: str = "")
         full_prompt = f"{persona['system_prompt']}\n\nContext: {context}\n\nUser: {message}"
         
         if persona['api_type'] == 'openrouter':
-            chat = LlmChat(
+            # Use litellm for OpenRouter compatibility
+            import litellm
+            
+            response = await litellm.acompletion(
+                model=persona['model'],
+                messages=[
+                    {"role": "system", "content": persona['system_prompt']},
+                    {"role": "user", "content": f"{context}\n\n{message}"}
+                ],
                 api_key=openrouter_key,
-                session_id=f"{persona_id}-session",
-                system_message=persona['system_prompt']
+                api_base="https://openrouter.ai/api/v1",
+                headers={
+                    "HTTP-Referer": "https://parliamentarium.app",
+                    "X-Title": "Parliamentarium"
+                }
             )
-            
-            # Configure for OpenRouter
-            chat.base_url = "https://openrouter.ai/api/v1"
-            chat.model = persona['model']
-            
-            user_message = UserMessage(text=f"{context}\n\n{message}")
-            response = await chat.send_message(user_message)
-            return response
+            return response.choices[0].message.content
             
         elif persona['api_type'] == 'gemini':
             model = genai.GenerativeModel(persona['model'])
