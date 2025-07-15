@@ -160,29 +160,43 @@ async def get_persona_response(persona_id: str, message: str, context: str = "")
     """Get response from a specific persona"""
     try:
         persona = PERSONAS[persona_id]
-        full_prompt = f"{persona['system_prompt']}\n\nContext: {context}\n\nUser: {message}"
         
         if persona['api_type'] == 'openrouter':
-            # Use litellm for OpenRouter compatibility
-            import litellm
+            # Direct OpenRouter API call
+            import aiohttp
             
-            response = await litellm.acompletion(
-                model=persona['model'],
-                messages=[
+            headers = {
+                "Authorization": f"Bearer {openrouter_key}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://parliamentarium.app",
+                "X-Title": "Parliamentarium"
+            }
+            
+            data = {
+                "model": persona['model'],
+                "messages": [
                     {"role": "system", "content": persona['system_prompt']},
                     {"role": "user", "content": f"{context}\n\n{message}"}
-                ],
-                api_key=openrouter_key,
-                api_base="https://openrouter.ai/api/v1",
-                headers={
-                    "HTTP-Referer": "https://parliamentarium.app",
-                    "X-Title": "Parliamentarium"
-                }
-            )
-            return response.choices[0].message.content
+                ]
+            }
             
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    "https://openrouter.ai/api/v1/chat/completions",
+                    headers=headers,
+                    json=data,
+                    timeout=aiohttp.ClientTimeout(total=30)
+                ) as response:
+                    if response.status == 200:
+                        result = await response.json()
+                        return result['choices'][0]['message']['content']
+                    else:
+                        error_text = await response.text()
+                        return f"[{persona['name']} experienced an OpenRouter error: {response.status}]"
+                        
         elif persona['api_type'] == 'gemini':
             model = genai.GenerativeModel(persona['model'])
+            full_prompt = f"{persona['system_prompt']}\n\nContext: {context}\n\nUser: {message}"
             response = await model.generate_content_async(full_prompt)
             return response.text
             
