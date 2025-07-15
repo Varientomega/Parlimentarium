@@ -327,7 +327,7 @@ async def create_meeting(request: MeetingRequest):
 @api_router.get("/meetings/{session_id}")
 async def get_meeting(session_id: str):
     """Get meeting details"""
-    meeting = await db.meetings.find_one({"id": session_id})
+    meeting = await db.meetings.find_one({"id": session_id}, {"_id": 0})
     if not meeting:
         raise HTTPException(status_code=404, detail="Meeting not found")
     return meeting
