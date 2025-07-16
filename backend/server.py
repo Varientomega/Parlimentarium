@@ -92,7 +92,7 @@ PERSONAS = {
         "role": "Glyph Scribe",
         "system_prompt": "You are The Court Illustrator, the Glyph Scribe. You capture meetings as symbolic visual compression. Focus on visual metaphors and artistic interpretation.",
         "api_type": "gemini",
-        "model": "gemini-1.5-pro-latest",
+        "model": "gemini-1.5-flash-latest",
         "personality": "artistic"
     },
     "id": {
