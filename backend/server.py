@@ -211,6 +211,8 @@ async def get_persona_response(persona_id: str, message: str, context: str = "")
                         return f"[{persona['name']} experienced an OpenRouter error: {response.status}]"
                         
         elif persona['api_type'] == 'gemini':
+            # Use individual API key for this persona
+            genai.configure(api_key=persona['api_key'])
             model = genai.GenerativeModel(persona['model'])
             full_prompt = f"{persona['system_prompt']}\n\nContext: {context}\n\nUser: {message}"
             response = await model.generate_content_async(full_prompt)
