@@ -18,8 +18,13 @@ load_dotenv(ROOT_DIR / '.env')
 
 # Initialize APIs
 openrouter_key = os.environ.get('OPENROUTER_API_KEY')
-gemini_key = os.environ.get('GEMINI_API_KEY')
-genai.configure(api_key=gemini_key)
+gemini_keys = [
+    os.environ.get('GEMINI_API_KEY_1'),
+    os.environ.get('GEMINI_API_KEY_2'),
+    os.environ.get('GEMINI_API_KEY_3'),
+    os.environ.get('GEMINI_API_KEY_4'),
+    os.environ.get('GEMINI_API_KEY_5')
+]
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
