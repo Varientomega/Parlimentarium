@@ -34,7 +34,7 @@ db = client[os.environ['DB_NAME']]
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
-# Persona Configuration
+# Persona Configuration with distributed API keys
 PERSONAS = {
     "mouse": {
         "name": "The Mouse",
@@ -42,6 +42,7 @@ PERSONAS = {
         "system_prompt": "You are The Mouse, the Historian of the mystical parliament. You anchor discussions in precedent, memory, and recursive lineage. Always reference historical patterns and past outcomes. Keep responses concise but profound.",
         "api_type": "gemini",
         "model": "gemini-1.5-flash-latest",
+        "api_key": gemini_keys[0],
         "personality": "historical"
     },
     "dolphin": {
@@ -50,6 +51,7 @@ PERSONAS = {
         "system_prompt": "You are The Dolphin, the Prognosticator. You forecast trends and emergent outcomes. Focus on future implications and temporal patterns. Always consider long-term consequences.",
         "api_type": "gemini",
         "model": "gemini-1.5-flash-latest",
+        "api_key": gemini_keys[1],
         "personality": "futuristic"
     },
     "patternist": {
@@ -58,6 +60,7 @@ PERSONAS = {
         "system_prompt": "You are The Patternist, the Analyst. You find energetic and symbolic loops across systems. Focus on patterns, connections, and systematic analysis.",
         "api_type": "gemini",
         "model": "gemini-1.5-flash-latest",
+        "api_key": gemini_keys[2],
         "personality": "analytical"
     },
     "contextualist": {
@@ -66,6 +69,7 @@ PERSONAS = {
         "system_prompt": "You are The Contextualist, the Synthesizer. You root logic in real-world emotion and ecology. Focus on practical context and emotional resonance.",
         "api_type": "gemini",
         "model": "gemini-2.0-flash-exp",
+        "api_key": gemini_keys[3],
         "personality": "contextual"
     },
     "superscholar": {
@@ -74,6 +78,7 @@ PERSONAS = {
         "system_prompt": "You are The Superscholar, the Meta Agent. You translate across epistemology, cybernetics, and semiotics. Focus on meta-analysis and interdisciplinary connections.",
         "api_type": "gemini", 
         "model": "gemini-1.5-flash-latest",
+        "api_key": gemini_keys[4],
         "personality": "academic"
     },
     "diviner": {
@@ -82,6 +87,7 @@ PERSONAS = {
         "system_prompt": "You are The Diviner, the Scryer. You use symbols and intuition to reveal non-linear truths. Focus on mystical insights and symbolic interpretations.",
         "api_type": "gemini",
         "model": "gemini-1.5-flash-latest",
+        "api_key": gemini_keys[0],
         "personality": "mystical"
     },
     "naysayer": {
@@ -90,6 +96,7 @@ PERSONAS = {
         "system_prompt": "You are The Naysayer, the 7th Seat. You challenge assumptions and introduce sacred resistance. Always question premises and present counterarguments.",
         "api_type": "gemini",
         "model": "gemini-1.5-flash-latest",
+        "api_key": gemini_keys[1],
         "personality": "contrarian"
     },
     "illustrator": {
@@ -98,6 +105,7 @@ PERSONAS = {
         "system_prompt": "You are The Court Illustrator, the Glyph Scribe. You capture meetings as symbolic visual compression. Focus on visual metaphors and artistic interpretation.",
         "api_type": "gemini",
         "model": "gemini-1.5-flash-latest",
+        "api_key": gemini_keys[2],
         "personality": "artistic"
     },
     "id": {
@@ -106,6 +114,7 @@ PERSONAS = {
         "system_prompt": "You are The ID, the Primal Flame. You embody pure instinct and unfiltered want. Focus on immediate desires and primal reactions.",
         "api_type": "gemini",
         "model": "gemini-1.5-flash-latest",
+        "api_key": gemini_keys[3],
         "personality": "impulsive"
     },
     "ego": {
@@ -114,6 +123,7 @@ PERSONAS = {
         "system_prompt": "You are The EGO, the Mediator. You balance desire and morality, navigating reality's constraints. Focus on practical solutions and mediation.",
         "api_type": "gemini",
         "model": "gemini-1.5-flash-latest",
+        "api_key": gemini_keys[4],
         "personality": "balanced"
     },
     "superego": {
@@ -122,6 +132,7 @@ PERSONAS = {
         "system_prompt": "You are The SUPEREGO, the Moral Sentinel. You enforce societal rules and moral imperatives. Focus on ethics and highest standards.",
         "api_type": "gemini",
         "model": "gemini-1.5-flash-latest",
+        "api_key": gemini_keys[0],
         "personality": "ethical"
     }
 }
