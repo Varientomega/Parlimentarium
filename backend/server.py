@@ -2006,6 +2006,101 @@ async def download_deliverable(session_id: str):
     
     return {"deliverable": final_deliverable}
 
+@api_router.post("/meetings/{session_id}/generate-podcast")
+async def start_podcast_generation(session_id: str):
+    """Start generating podcast from completed parliamentary session"""
+    meeting = await db.meetings.find_one({"id": session_id}, {"_id": 0})
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    
+    # Check if meeting is in a completed state
+    valid_statuses = ["completed", "deliverable_ready"]
+    if meeting.get('status') not in valid_statuses:
+        raise HTTPException(status_code=400, detail="Meeting must be completed before generating podcast")
+    
+    # Check if podcast already exists
+    if meeting.get('generated_podcast'):
+        return {"message": "Podcast already exists", "podcast": meeting['generated_podcast']}
+    
+    # Initialize podcast generation
+    await db.meetings.update_one(
+        {"id": session_id},
+        {"$set": {
+            "podcast_status": "generating",
+            "podcast_generation_progress": 0,
+            "podcast_started_at": datetime.utcnow().isoformat()
+        }}
+    )
+    
+    # Start background podcast generation
+    import asyncio
+    asyncio.create_task(generate_full_podcast(session_id))
+    
+    return {"message": "Podcast generation started", "session_id": session_id}
+
+@api_router.get("/meetings/{session_id}/podcast-progress")
+async def get_podcast_progress(session_id: str):
+    """Get podcast generation progress"""
+    meeting = await db.meetings.find_one({"id": session_id}, {"_id": 0})
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    
+    progress = meeting.get('podcast_generation_progress', 0)
+    status = meeting.get('podcast_status', 'not_started')
+    error = meeting.get('podcast_error')
+    
+    return {
+        "progress": progress,
+        "status": status,
+        "error": error,
+        "estimated_time_remaining": max(0, (100 - progress) * 0.5) if status == "generating" else 0
+    }
+
+@api_router.get("/meetings/{session_id}/download-podcast")
+async def download_podcast(session_id: str):
+    """Download the generated podcast audio file"""
+    from fastapi.responses import FileResponse
+    import os
+    
+    meeting = await db.meetings.find_one({"id": session_id}, {"_id": 0})
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    
+    podcast_info = meeting.get('generated_podcast')
+    if not podcast_info:
+        raise HTTPException(status_code=400, detail="No podcast available")
+    
+    if meeting.get('podcast_status') != 'completed':
+        raise HTTPException(status_code=400, detail="Podcast generation not completed")
+    
+    file_path = podcast_info.get('file_path')
+    if not file_path or not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Podcast file not found")
+    
+    return FileResponse(
+        path=file_path,
+        media_type='audio/mpeg',
+        filename=f"parliamentarium_podcast_{session_id}.mp3",
+        headers={"Content-Disposition": f"attachment; filename=parliamentarium_podcast_{session_id}.mp3"}
+    )
+
+@api_router.get("/meetings/{session_id}/podcast-info")
+async def get_podcast_info(session_id: str):
+    """Get detailed information about the generated podcast"""
+    meeting = await db.meetings.find_one({"id": session_id}, {"_id": 0})
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    
+    podcast_info = meeting.get('generated_podcast')
+    if not podcast_info:
+        raise HTTPException(status_code=400, detail="No podcast available")
+    
+    return {
+        "podcast_info": podcast_info,
+        "generation_progress": meeting.get('podcast_generation_progress', 0),
+        "generation_status": meeting.get('podcast_status', 'not_started')
+    }
+
 @api_router.get("/meetings/{session_id}")
 async def get_meeting(session_id: str):
     """Get meeting details"""
