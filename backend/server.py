@@ -741,6 +741,325 @@ async def get_creator_response_to_improvement(supplement: Dict, improvement: Dic
         "improved_version": improved_version
     }
 
+async def contextualist_create_scaffolding(winning_idea: Dict, meeting_context: str, uploaded_files: List[Dict]) -> Dict:
+    """Contextualist creates scaffolding/outline after winning idea selection"""
+    persona = PERSONAS["contextualist"]
+    
+    files_summary = "\n".join([
+        f"- {file['filename']} ({file['file_type']}, {file['size']} bytes): {file.get('summary', 'No summary available')}"
+        for file in uploaded_files
+    ]) if uploaded_files else "No files uploaded."
+    
+    prompt = f"""
+    The parliament has selected this winning idea for creation: "{winning_idea['idea']}" by {winning_idea.get('persona_name', 'Unknown')}
+    
+    Context: {meeting_context}
+    Available Files: {files_summary}
+    
+    As {persona['name']}, the Integration Master, create a comprehensive scaffolding/outline for bringing this idea to life.
+    
+    Consider:
+    - The scope and complexity of the creation task
+    - How to structure the work for optimal collaboration
+    - What sections or components will be needed
+    - The logical flow and organization
+    - How different personas might contribute their unique strengths
+    
+    Format your response as:
+    PROJECT_TITLE: [Clear title for the creation project]
+    PROJECT_OVERVIEW: [High-level summary of what will be created]
+    MAIN_SECTIONS: [List the key sections/components needed, maximum 9 sections]
+    STRUCTURE_REASONING: [Why you chose this particular structure and organization]
+    COLLABORATION_NOTES: [How different personas might best contribute]
+    """
+    
+    response = await get_persona_response("contextualist", prompt, meeting_context)
+    
+    # Parse response
+    project_title = winning_idea['idea']  # default
+    project_overview = response
+    main_sections = []
+    structure_reasoning = ""
+    collaboration_notes = ""
+    
+    try:
+        if "PROJECT_TITLE:" in response:
+            project_title = response.split("PROJECT_TITLE:")[1].split("PROJECT_OVERVIEW:")[0].strip()
+            
+        if "PROJECT_OVERVIEW:" in response:
+            project_overview = response.split("PROJECT_OVERVIEW:")[1].split("MAIN_SECTIONS:")[0].strip()
+            
+        if "MAIN_SECTIONS:" in response:
+            sections_part = response.split("MAIN_SECTIONS:")[1].split("STRUCTURE_REASONING:")[0].strip()
+            # Parse sections - assume they're listed one per line or numbered
+            section_lines = [line.strip() for line in sections_part.split('\n') if line.strip()]
+            main_sections = section_lines[:9]  # Max 9 sections
+            
+        if "STRUCTURE_REASONING:" in response:
+            structure_reasoning = response.split("STRUCTURE_REASONING:")[1].split("COLLABORATION_NOTES:")[0].strip()
+            
+        if "COLLABORATION_NOTES:" in response:
+            collaboration_notes = response.split("COLLABORATION_NOTES:")[1].strip()
+    except:
+        pass
+    
+    return {
+        "project_title": project_title,
+        "project_overview": project_overview,
+        "main_sections": main_sections,
+        "structure_reasoning": structure_reasoning,
+        "collaboration_notes": collaboration_notes,
+        "created_by": "contextualist",
+        "created_at": datetime.utcnow().isoformat()
+    }
+
+async def contextualist_assign_sections(scaffolding: Dict, meeting_context: str) -> List[Dict]:
+    """Contextualist assigns each section to the best suited persona"""
+    persona = PERSONAS["contextualist"]
+    assignments = []
+    
+    for i, section in enumerate(scaffolding['main_sections']):
+        prompt = f"""
+        Project: {scaffolding['project_title']}
+        Overview: {scaffolding['project_overview']}
+        
+        Section to assign: "{section}"
+        Context: {meeting_context}
+        
+        As {persona['name']}, assign this section to the persona best suited to create/write it.
+        
+        Available personas and their strengths:
+        - The Mouse (Historian): Historical context, precedent, memory, tradition
+        - The Dolphin (Prognosticator): Future trends, predictions, possibilities
+        - The Patternist (Analyst): Patterns, systems, data analysis, structure
+        - The Superscholar (Meta Agent): Academic depth, interdisciplinary connections
+        - The Diviner (Scryer): Intuition, symbols, mystical insights, creativity
+        - The Naysayer (7th Seat): Critical analysis, challenges, alternative viewpoints
+        - The Court Illustrator (Glyph Scribe): Visual elements, artistic interpretation
+        - The ID (Primal Flame): Emotional authenticity, raw human needs
+        - The EGO (Mediator): Practical solutions, balance, real-world application
+        - The SUPEREGO (Moral Sentinel): Ethics, principles, moral framework
+        
+        Format your response as:
+        ASSIGNED_PERSONA: [persona_id from the list above, e.g., "mouse", "dolphin"]
+        REASONING: [Why this persona is best suited for this section]
+        SECTION_BRIEF: [Specific instructions for what this section should accomplish]
+        """
+        
+        response = await get_persona_response("contextualist", prompt, meeting_context)
+        
+        # Parse response
+        assigned_persona_id = "ego"  # default
+        reasoning = response
+        section_brief = section
+        
+        try:
+            if "ASSIGNED_PERSONA:" in response:
+                assigned_part = response.split("ASSIGNED_PERSONA:")[1].split("REASONING:")[0].strip()
+                # Clean up the persona ID
+                assigned_persona_id = assigned_part.lower().replace("the ", "").strip()
+                # Map common variations to correct IDs
+                persona_map = {
+                    "mouse": "mouse", "historian": "mouse",
+                    "dolphin": "dolphin", "prognosticator": "dolphin", 
+                    "patternist": "patternist", "analyst": "patternist",
+                    "superscholar": "superscholar", "meta agent": "superscholar",
+                    "diviner": "diviner", "scryer": "diviner",
+                    "naysayer": "naysayer", "7th seat": "naysayer",
+                    "illustrator": "illustrator", "court illustrator": "illustrator", "glyph scribe": "illustrator",
+                    "id": "id", "primal flame": "id",
+                    "ego": "ego", "mediator": "ego",
+                    "superego": "superego", "moral sentinel": "superego"
+                }
+                assigned_persona_id = persona_map.get(assigned_persona_id, "ego")
+                
+            if "REASONING:" in response:
+                reasoning = response.split("REASONING:")[1].split("SECTION_BRIEF:")[0].strip()
+                
+            if "SECTION_BRIEF:" in response:
+                section_brief = response.split("SECTION_BRIEF:")[1].strip()
+        except:
+            pass
+        
+        assignment = {
+            "id": str(uuid.uuid4()),
+            "section_number": i + 1,
+            "section_title": section,
+            "section_description": section_brief,
+            "assigned_persona_id": assigned_persona_id,
+            "assigned_persona_name": PERSONAS.get(assigned_persona_id, PERSONAS["ego"])["name"],
+            "assignment_reasoning": reasoning,
+            "completion_status": "pending",
+            "completed_content": None
+        }
+        assignments.append(assignment)
+    
+    return assignments
+
+async def persona_complete_section(assignment: Dict, meeting_context: str, uploaded_files: List[Dict]) -> str:
+    """Assigned persona completes their section"""
+    persona = PERSONAS[assignment['assigned_persona_id']]
+    
+    files_context = "\n".join([
+        f"Available file: {file['filename']} - {file.get('summary', 'Content available for reference')}"
+        for file in uploaded_files
+    ]) if uploaded_files else "No reference files available."
+    
+    prompt = f"""
+    You have been assigned to create this section:
+    
+    SECTION: {assignment['section_title']}
+    INSTRUCTIONS: {assignment['section_description']}
+    
+    Project Context: {meeting_context}
+    Available Reference Materials: {files_context}
+    
+    Assignment Reasoning: {assignment['assignment_reasoning']}
+    
+    As {persona['name']}, create comprehensive content for this section.
+    
+    Consider your personality and strengths:
+    - Your dislikes: {persona['dislikes']}
+    - Your goals: {persona['goal']}
+    - What drives you: {persona['drives']}
+    - Your creativity level: {persona['creativity']}/10
+    
+    Write substantial, high-quality content that reflects your unique perspective and expertise.
+    Make it engaging, thorough, and aligned with your personality.
+    
+    Your section content:
+    """
+    
+    return await get_persona_response(assignment['assigned_persona_id'], prompt, meeting_context)
+
+async def contextualist_combine_sections(assignments: List[Dict], scaffolding: Dict, meeting_context: str) -> str:
+    """Contextualist combines all completed sections into the main document"""
+    persona = PERSONAS["contextualist"]
+    
+    completed_sections = "\n\n".join([
+        f"=== {assignment['section_title']} ===\n(by {assignment['assigned_persona_name']})\n{assignment['completed_content']}"
+        for assignment in assignments if assignment['completed_content']
+    ])
+    
+    prompt = f"""
+    Project: {scaffolding['project_title']}
+    Overview: {scaffolding['project_overview']}
+    Context: {meeting_context}
+    
+    All council members have completed their assigned sections:
+    
+    {completed_sections}
+    
+    As {persona['name']}, the Integration Master, weave these sections together into a cohesive, unified document.
+    
+    Your task:
+    1. Create smooth transitions between sections
+    2. Ensure consistent tone and flow
+    3. Add integrative elements that connect the pieces
+    4. Preserve each persona's unique contributions while creating unity
+    5. Add introduction and conclusion that frame the entire work
+    6. Apply your emotional intelligence and practical wisdom to make it accessible
+    
+    Create the final integrated main document:
+    """
+    
+    return await get_persona_response("contextualist", prompt, meeting_context)
+
+async def persona_create_supplemental_document(supplemental_work: Dict, meeting_context: str) -> str:
+    """Original supplemental work creator develops their idea into a document"""
+    persona = PERSONAS[supplemental_work['creator_persona_id']]
+    
+    prompt = f"""
+    You originally proposed this supplemental work: "{supplemental_work['title']}"
+    Description: {supplemental_work['content']}
+    
+    Project Context: {meeting_context}
+    
+    As {persona['name']}, now develop this supplemental work into a complete, standalone document.
+    
+    Consider:
+    - Your original vision and intent
+    - How it complements the main work
+    - Your personality and creative strengths
+    - Making it comprehensive and valuable
+    
+    Create a full supplemental document based on your idea:
+    """
+    
+    return await get_persona_response(supplemental_work['creator_persona_id'], prompt, meeting_context)
+
+async def contextualist_final_integration(main_document: str, supplemental_documents: List[Dict], meeting_context: str) -> Dict:
+    """Contextualist creates the final deliverable combining main work and supplemental works"""
+    persona = PERSONAS["contextualist"]
+    
+    supplemental_summary = "\n\n".join([
+        f"=== SUPPLEMENTAL: {doc['title']} ===\n(by {doc['creator_name']})\n{doc['content']}"
+        for doc in supplemental_documents
+    ])
+    
+    prompt = f"""
+    MAIN DOCUMENT:
+    {main_document}
+    
+    SUPPLEMENTAL DOCUMENTS:
+    {supplemental_summary}
+    
+    Context: {meeting_context}
+    
+    As {persona['name']}, the Integration Master, create the final deliverable for the user.
+    
+    This should be:
+    1. A unified presentation of the main work and supplemental works
+    2. Organized for maximum user value and accessibility
+    3. With clear structure and navigation
+    4. Including executive summary and implementation guidance
+    5. Emotionally resonant and practically actionable
+    
+    Format as:
+    EXECUTIVE_SUMMARY: [High-level overview of the complete deliverable]
+    MAIN_DOCUMENT: [The integrated main document]
+    SUPPLEMENTAL_WORKS: [Organized presentation of supplemental documents]
+    IMPLEMENTATION_GUIDE: [Practical next steps for the user]
+    COLLABORATION_NOTES: [How the AI council worked together to create this]
+    """
+    
+    response = await get_persona_response("contextualist", prompt, meeting_context)
+    
+    # Parse the final deliverable
+    executive_summary = "Summary not available"
+    main_doc = main_document
+    supplemental_works = supplemental_summary
+    implementation_guide = ""
+    collaboration_notes = ""
+    
+    try:
+        if "EXECUTIVE_SUMMARY:" in response:
+            executive_summary = response.split("EXECUTIVE_SUMMARY:")[1].split("MAIN_DOCUMENT:")[0].strip()
+            
+        if "MAIN_DOCUMENT:" in response:
+            main_doc = response.split("MAIN_DOCUMENT:")[1].split("SUPPLEMENTAL_WORKS:")[0].strip()
+            
+        if "SUPPLEMENTAL_WORKS:" in response:
+            supplemental_works = response.split("SUPPLEMENTAL_WORKS:")[1].split("IMPLEMENTATION_GUIDE:")[0].strip()
+            
+        if "IMPLEMENTATION_GUIDE:" in response:
+            implementation_guide = response.split("IMPLEMENTATION_GUIDE:")[1].split("COLLABORATION_NOTES:")[0].strip()
+            
+        if "COLLABORATION_NOTES:" in response:
+            collaboration_notes = response.split("COLLABORATION_NOTES:")[1].strip()
+    except:
+        pass
+    
+    return {
+        "executive_summary": executive_summary,
+        "main_document": main_doc,
+        "supplemental_works": supplemental_works,
+        "implementation_guide": implementation_guide,
+        "collaboration_notes": collaboration_notes,
+        "created_at": datetime.utcnow().isoformat(),
+        "integration_master": "The Contextualist"
+    }
+
 async def get_improvements_for_main_idea(winning_idea: Dict, meeting_context: str) -> List[Dict]:
     """Each persona (except Contextualist and creator) suggests improvements to the main winning idea"""
     improvements = []
