@@ -22,6 +22,8 @@ export default function MeetingRoom() {
   const [finalReport, setFinalReport] = useState(null);
   const [progress, setProgress] = useState(0);
   const [userMessage, setUserMessage] = useState("");
+  const [isCreationTask, setIsCreationTask] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState([]);
   const navigate = useNavigate();
   const messagesEndRef = useRef(null);
 
