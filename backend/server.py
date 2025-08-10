@@ -708,6 +708,217 @@ async def get_creator_response_to_improvement(supplement: Dict, improvement: Dic
         "improved_version": improved_version
     }
 
+async def get_improvements_for_main_idea(winning_idea: Dict, meeting_context: str) -> List[Dict]:
+    """Each persona (except Contextualist and creator) suggests improvements to the main winning idea"""
+    improvements = []
+    
+    for persona_id in PERSONA_ORDER[:-1]:  # Exclude Contextualist
+        if persona_id == winning_idea['persona_id']:
+            continue  # Creator doesn't improve their own idea in this phase
+            
+        persona = PERSONAS[persona_id]
+        prompt = f"""
+        The parliament has selected this winning idea: "{winning_idea['idea']}" by {winning_idea['persona_name']}.
+        
+        Context: {meeting_context}
+        
+        As {persona['name']}, suggest ONE specific improvement to make this main winning idea even better.
+        Consider your personality - what would you add, change, or enhance based on your dislikes, goals, and drives?
+        
+        Be specific and constructive. Focus on how to make the core idea more effective, creative, or aligned with your perspective.
+        
+        Your improvement suggestion:
+        """
+        
+        response = await get_persona_response(persona_id, prompt, meeting_context)
+        
+        improvement = {
+            "id": str(uuid.uuid4()),
+            "suggester_persona_id": persona_id,
+            "suggester_name": persona['name'],
+            "improvement_text": response.strip(),
+            "critiques": [],
+            "creator_response": None
+        }
+        improvements.append(improvement)
+    
+    return improvements
+
+async def get_main_idea_improvement_critiques(improvement: Dict, winning_idea: Dict, meeting_context: str) -> List[Dict]:
+    """Each persona critiques/notices the suggested improvements to the main idea"""
+    critiques = []
+    
+    for persona_id in PERSONA_ORDER[:-1]:  # Exclude Contextualist
+        if persona_id == improvement['suggester_persona_id'] or persona_id == winning_idea['persona_id']:
+            continue  # Suggester and creator don't critique in this phase
+            
+        persona = PERSONAS[persona_id]
+        prompt = f"""
+        Context: {meeting_context}
+        
+        Original Winning Idea: "{winning_idea['idea']}" by {winning_idea['persona_name']}
+        
+        {improvement['suggester_name']} suggested this improvement to the main idea:
+        "{improvement['improvement_text']}"
+        
+        As {persona['name']}, provide a brief critique or observation about this improvement suggestion.
+        
+        Consider:
+        - Is it a good improvement? Why or why not?
+        - What are the strengths/weaknesses?
+        - How does it align with your own perspective and personality?
+        - Any concerns or additional thoughts?
+        
+        Keep it concise but insightful:
+        """
+        
+        response = await get_persona_response(persona_id, prompt, meeting_context)
+        
+        critique = {
+            "critiquer_persona_id": persona_id,
+            "critiquer_name": persona['name'],
+            "critique_text": response.strip()
+        }
+        critiques.append(critique)
+    
+    return critiques
+
+async def get_main_creator_response_to_improvement(winning_idea: Dict, improvement: Dict, meeting_context: str) -> Dict:
+    """Original creator of winning idea responds to an improvement suggestion"""
+    creator_persona = PERSONAS[winning_idea['persona_id']]
+    
+    critiques_text = "\n".join([
+        f"- {critique['critiquer_name']}: {critique['critique_text']}"
+        for critique in improvement['critiques']
+    ]) if improvement['critiques'] else "No critiques provided."
+    
+    prompt = f"""
+    You created the winning idea: "{winning_idea['idea']}"
+    
+    {improvement['suggester_name']} suggested this improvement:
+    "{improvement['improvement_text']}"
+    
+    Other council members provided these observations:
+    {critiques_text}
+    
+    Context: {meeting_context}
+    
+    As {creator_persona['name']}, respond to this improvement suggestion for your winning idea.
+    Consider your personality - your dislikes, goals, and what drives you.
+    
+    Format your response as:
+    DECISION: [AGREE or DISAGREE]
+    REASONING: [Why you agree or disagree, based on your personality and perspective]
+    IMPROVED_VERSION: [If you AGREE, provide your improved version incorporating the suggestion. If DISAGREE, restate your original.]
+    """
+    
+    response = await get_persona_response(winning_idea['persona_id'], prompt, meeting_context)
+    
+    # Parse response
+    decision = "DISAGREE"  # default
+    reasoning = response
+    improved_version = winning_idea['idea']  # default to original
+    
+    try:
+        if "DECISION:" in response:
+            decision_part = response.split("DECISION:")[1].split("REASONING:")[0].strip()
+            decision = "AGREE" if "AGREE" in decision_part.upper() else "DISAGREE"
+            
+        if "REASONING:" in response:
+            reasoning_part = response.split("REASONING:")[1].split("IMPROVED_VERSION:")[0].strip()
+            reasoning = reasoning_part
+            
+        if "IMPROVED_VERSION:" in response:
+            improved_part = response.split("IMPROVED_VERSION:")[1].strip()
+            improved_version = improved_part
+    except:
+        pass
+    
+    return {
+        "decision": decision,
+        "reasoning": reasoning,
+        "improved_version": improved_version
+    }
+
+async def contextualist_main_idea_improvement_and_integration(winning_idea: Dict, improvements: List[Dict], meeting_context: str) -> Dict:
+    """Contextualist adds their improvement and integrates all accepted improvements for the main idea"""
+    persona = PERSONAS["contextualist"]
+    
+    # Step 1: Contextualist suggests their own improvement
+    improvements_summary = "\n".join([
+        f"- {imp['suggester_name']}: {imp['improvement_text']} [{imp['creator_response']['decision'] if imp['creator_response'] else 'PENDING'}]"
+        for imp in improvements
+    ])
+    
+    contextualist_improvement_prompt = f"""
+    Main Winning Idea: "{winning_idea['idea']}" by {winning_idea['persona_name']}
+    
+    Other council members have suggested these improvements:
+    {improvements_summary}
+    
+    Context: {meeting_context}
+    
+    As {persona['name']}, the Integration Master who goes last, suggest your own improvement to this main winning idea.
+    Consider your role as synthesizer and your personality - focus on integration, emotional resonance, and real-world practicality.
+    
+    Your improvement suggestion:
+    """
+    
+    contextualist_improvement = await get_persona_response("contextualist", contextualist_improvement_prompt, meeting_context)
+    
+    # Step 2: Contextualist integrates all accepted improvements
+    accepted_improvements = [
+        imp for imp in improvements 
+        if imp.get('creator_response', {}).get('decision') == 'AGREE'
+    ]
+    
+    integration_prompt = f"""
+    Original Winning Idea: "{winning_idea['idea']}" by {winning_idea['persona_name']}
+    
+    Accepted Improvements:
+    {chr(10).join([f"- {imp['suggester_name']}: {imp['improvement_text']}" for imp in accepted_improvements])}
+    
+    Your Own Improvement: {contextualist_improvement}
+    
+    Context: {meeting_context}
+    
+    As {persona['name']}, the Integration Master, create a unified, enhanced version of the main winning idea that:
+    1. Preserves the creator's original intent and vision
+    2. Meaningfully incorporates all accepted improvements
+    3. Adds your own synthesizing perspective for emotional resonance and practicality
+    4. Creates a coherent, integrated main idea
+    5. Ensures it maintains the core essence while being enhanced
+    
+    Provide your integrated version:
+    INTEGRATED_MAIN_IDEA: [Complete enhanced version of the winning idea]
+    INTEGRATION_NOTES: [How you wove everything together and why]
+    """
+    
+    integration_response = await get_persona_response("contextualist", integration_prompt, meeting_context)
+    
+    # Parse integration response
+    integrated_idea = winning_idea['idea']  # default
+    integration_notes = integration_response
+    
+    try:
+        if "INTEGRATED_MAIN_IDEA:" in integration_response:
+            integrated_part = integration_response.split("INTEGRATED_MAIN_IDEA:")[1].split("INTEGRATION_NOTES:")[0].strip()
+            integrated_idea = integrated_part
+            
+        if "INTEGRATION_NOTES:" in integration_response:
+            notes_part = integration_response.split("INTEGRATION_NOTES:")[1].strip()
+            integration_notes = notes_part
+    except:
+        pass
+    
+    return {
+        "contextualist_improvement": contextualist_improvement,
+        "integrated_main_idea": integrated_idea,
+        "integration_notes": integration_notes,
+        "total_accepted_improvements": len(accepted_improvements),
+        "original_idea": winning_idea['idea']
+    }
+
 async def contextualist_integration(winning_idea: Dict, supplemental_works: List[Dict], meeting_context: str) -> str:
     """Contextualist integrates all supplemental works into the main idea"""
     supplements_summary = "\n\n".join([
