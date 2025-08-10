@@ -886,13 +886,108 @@ async def generate_supplemental_works(session_id: str):
     # Generate supplemental works
     supplemental_works = await get_supplemental_works(session_id, winning_idea)
     
-    # Update meeting
+    # Update meeting to improvement phase
     await db.meetings.update_one(
         {"id": session_id},
-        {"$set": {"supplemental_works": supplemental_works, "phase": "amendments", "current_supplement_index": 0}}
+        {"$set": {"supplemental_works": supplemental_works, "phase": "improvements", "current_improvement_index": 0}}
     )
     
-    return {"message": "Supplemental works generated", "supplemental_works": supplemental_works}
+    return {"message": "Supplemental works generated, ready for improvement loops", "supplemental_works": supplemental_works}
+
+@api_router.post("/meetings/{session_id}/process-improvements/{supplement_index}")
+async def process_improvement_loop(session_id: str, supplement_index: int):
+    """Phase 5.5: Process improvement loop for a specific supplemental work"""
+    meeting = await db.meetings.find_one({"id": session_id}, {"_id": 0})
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    
+    supplemental_works = meeting.get('supplemental_works', [])
+    if supplement_index >= len(supplemental_works):
+        raise HTTPException(status_code=400, detail="Invalid supplement index")
+    
+    supplement = supplemental_works[supplement_index]
+    meeting_context = f"Topic: {meeting['topic']}. Winning idea: {meeting['final_report']['winning_idea']['idea']}"
+    
+    # Step 1: Get improvements from all personas
+    improvements = await get_improvements_for_supplement(supplement, meeting_context)
+    
+    # Step 2: Get critiques for each improvement
+    for improvement in improvements:
+        critiques = await get_improvement_critiques(improvement, supplement, meeting_context)
+        improvement['critiques'] = critiques
+    
+    # Step 3: Get creator's response to each improvement
+    improved_versions = []
+    for improvement in improvements:
+        creator_response = await get_creator_response_to_improvement(supplement, improvement, meeting_context)
+        improvement['creator_response'] = creator_response
+        
+        if creator_response['decision'] == 'AGREE':
+            improved_versions.append({
+                "improvement_id": improvement['id'],
+                "suggester": improvement['suggester_name'],
+                "improved_content": creator_response['improved_version']
+            })
+    
+    # Create improvement loop record
+    improvement_loop = {
+        "id": str(uuid.uuid4()),
+        "supplemental_work_id": supplement['id'],
+        "improvements": improvements,
+        "accepted_improvements": len([imp for imp in improvements if imp['creator_response']['decision'] == 'AGREE']),
+        "final_improved_version": supplement['content']  # Will be updated if improvements accepted
+    }
+    
+    # If any improvements were accepted, update the supplemental work
+    if improved_versions:
+        # Use the last accepted improvement as the final version (or combine them)
+        final_improved = improved_versions[-1]['improved_content']
+        supplement['content'] = final_improved
+        supplement['improvement_history'] = {
+            "original_content": supplement['content'],
+            "improvements_applied": len(improved_versions),
+            "final_version": final_improved
+        }
+        improvement_loop['final_improved_version'] = final_improved
+    
+    # Update meeting record
+    supplemental_works[supplement_index] = supplement
+    improvement_loops = meeting.get('improvement_loops', [])
+    improvement_loops.append(improvement_loop)
+    
+    await db.meetings.update_one(
+        {"id": session_id},
+        {"$set": {
+            "supplemental_works": supplemental_works,
+            "improvement_loops": improvement_loops,
+            "current_improvement_index": supplement_index + 1
+        }}
+    )
+    
+    return {
+        "message": f"Improvement loop completed for supplement {supplement_index + 1}",
+        "improvement_loop": improvement_loop,
+        "improved_supplement": supplement
+    }
+
+@api_router.post("/meetings/{session_id}/finalize-improvements")
+async def finalize_improvements_phase(session_id: str):
+    """Complete improvement loops and move to amendments phase"""
+    meeting = await db.meetings.find_one({"id": session_id}, {"_id": 0})
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    
+    await db.meetings.update_one(
+        {"id": session_id},
+        {"$set": {"phase": "amendments", "current_supplement_index": 0}}
+    )
+    
+    total_improvements = sum(loop.get('accepted_improvements', 0) for loop in meeting.get('improvement_loops', []))
+    
+    return {
+        "message": "Improvement phase completed, moving to amendments",
+        "total_accepted_improvements": total_improvements
+    }
 
 @api_router.post("/meetings/{session_id}/process-amendments/{supplement_index}")
 async def process_amendments(session_id: str, supplement_index: int):
