@@ -24,6 +24,11 @@ export default function MeetingRoom() {
   const [userMessage, setUserMessage] = useState("");
   const [isCreationTask, setIsCreationTask] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState([]);
+  // Podcast states
+  const [podcastStatus, setPodcastStatus] = useState('not_started');
+  const [podcastProgress, setPodcastProgress] = useState(0);
+  const [podcastInfo, setPodcastInfo] = useState(null);
+  const [isGeneratingPodcast, setIsGeneratingPodcast] = useState(false);
   const navigate = useNavigate();
   const messagesEndRef = useRef(null);
 
