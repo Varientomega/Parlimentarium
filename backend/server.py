@@ -223,6 +223,39 @@ class MeetingSession(BaseModel):
     user_pauses: List[Dict] = Field(default_factory=list)
     final_report: Optional[Dict] = None
     is_paused: bool = False
+    # New creation/writing workflow fields
+    is_creation_task: bool = False
+    uploaded_files: List[Dict] = Field(default_factory=list)
+    scaffolding_outline: Optional[Dict] = None
+    section_assignments: List[Dict] = Field(default_factory=list)
+    completed_sections: List[Dict] = Field(default_factory=list)
+    main_document: Optional[str] = None
+    supplemental_documents: List[Dict] = Field(default_factory=list)
+    final_deliverable: Optional[Dict] = None
+
+class FileUpload(BaseModel):
+    filename: str
+    content: str  # base64 encoded
+    file_type: str
+    size: int
+    upload_timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+class SectionAssignment(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    section_number: int
+    section_title: str
+    section_description: str
+    assigned_persona_id: str
+    assigned_persona_name: str
+    assignment_reasoning: str
+    completion_status: str = "pending"  # pending, in_progress, completed
+    completed_content: Optional[str] = None
+
+class CreationRequest(BaseModel):
+    topic: str
+    description: Optional[str] = None
+    proposer: str = "Anonymous"
+    is_creation_task: bool = True
 
 class ImprovementLoop(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
