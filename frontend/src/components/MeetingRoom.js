@@ -539,6 +539,105 @@ export default function MeetingRoom() {
         </Card>
       )}
 
+      {/* Podcast Generation Section */}
+      {(currentPhase === 'completed' || finalReport) && (
+        <Card className="bg-gray-800/50 border-purple-500/30 mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              🎙️ Generate Parliamentary Podcast
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="bg-purple-900/20 rounded-lg p-4 border border-purple-500/30">
+                <h4 className="text-sm font-medium text-purple-300 mb-3">🎧 Immersive Audio Experience</h4>
+                <div className="text-xs text-purple-200 space-y-2">
+                  <div>• Each AI persona speaks with their own unique voice</div>
+                  <div>• Complete summary of the parliamentary session</div>
+                  <div>• Professional podcast format with segments</div>
+                  <div>• Download as MP3 file for offline listening</div>
+                </div>
+              </div>
+
+              {podcastStatus === 'not_started' && (
+                <Button
+                  onClick={startPodcastGeneration}
+                  disabled={isGeneratingPodcast}
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                >
+                  🎙️ Generate Podcast with AI Voices
+                </Button>
+              )}
+
+              {podcastStatus === 'generating' && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-400">Generating Podcast Audio...</span>
+                    <span className="text-sm text-gray-400">{podcastProgress}%</span>
+                  </div>
+                  <Progress value={podcastProgress} className="h-3 bg-gray-700">
+                    <div className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-300" 
+                         style={{width: `${podcastProgress}%`}} />
+                  </Progress>
+                  <div className="text-xs text-gray-400 space-y-1">
+                    <div>🔊 Generating unique voices for each persona...</div>
+                    <div>🎵 Combining audio segments into podcast...</div>
+                    <div>📦 Preparing final audio file...</div>
+                  </div>
+                </div>
+              )}
+
+              {podcastStatus === 'completed' && podcastInfo && (
+                <div className="space-y-4">
+                  <div className="bg-green-900/20 rounded-lg p-4 border border-green-500/30">
+                    <h4 className="text-green-300 font-medium mb-2">✅ Podcast Ready!</h4>
+                    <div className="text-sm text-green-200 space-y-1">
+                      <div>🎧 <strong>{podcastInfo.title}</strong></div>
+                      <div>⏱️ Duration: ~{podcastInfo.estimated_duration} minutes</div>
+                      <div>📁 File Size: {podcastInfo.file_size}</div>
+                      <div>🗣️ {podcastInfo.total_segments} unique voice segments</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={downloadPodcast}
+                      className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
+                    >
+                      📥 Download Podcast (MP3)
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        // Show podcast details
+                        alert(`Podcast Segments:\n${podcastInfo.script.script_segments.map(s => `• ${s.segment_title} (${s.persona_name})`).join('\n')}`);
+                      }}
+                      className="border-purple-500 text-purple-300 hover:bg-purple-800"
+                    >
+                      📋 Show Segments
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {podcastStatus === 'failed' && (
+                <div className="bg-red-900/20 rounded-lg p-4 border border-red-500/30">
+                  <div className="text-red-300 text-sm">
+                    ❌ Podcast generation failed. Please try again.
+                  </div>
+                  <Button
+                    onClick={startPodcastGeneration}
+                    className="mt-3 bg-red-600 hover:bg-red-700"
+                  >
+                    🔄 Retry Podcast Generation
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* User Input */}
       <Card className="bg-gray-800/50 border-amber-500/30">
         <CardHeader>
