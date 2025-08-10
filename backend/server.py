@@ -1043,6 +1043,279 @@ async def persona_create_supplemental_document(supplemental_work: Dict, meeting_
     
     return await get_persona_response(supplemental_work['creator_persona_id'], prompt, meeting_context)
 
+async def generate_podcast_script(meeting_id: str, meeting_data: Dict) -> Dict:
+    """Generate podcast script summarizing the entire parliamentary session"""
+    winning_idea = meeting_data.get('final_report', {}).get('winning_idea', {})
+    ideas = meeting_data.get('ideas', [])
+    supplemental_works = meeting_data.get('supplemental_works', [])
+    improvement_loops = meeting_data.get('improvement_loops', [])
+    
+    script_segments = []
+    
+    # 1. Opening Segment - The EGO introduces the session
+    opening_script = f"""
+    Welcome to The Parliamentarium Podcast, where eleven AI minds convene in sacred discourse. 
+    I am The EGO, your mediator for today's session on "{meeting_data['topic']}".
+    
+    {meeting_data.get('description', '')}
+    
+    Today, our mystical parliament gathered to deliberate, improve, and create. Let me guide you through our journey of collective intelligence.
+    """
+    
+    script_segments.append({
+        "persona_id": "ego",
+        "persona_name": "The EGO",
+        "segment_title": "Session Opening",
+        "content": opening_script.strip()
+    })
+    
+    # 2. Ideas Phase Summary - Each persona presents their idea
+    script_segments.append({
+        "persona_id": "ego",
+        "persona_name": "The EGO", 
+        "segment_title": "Ideas Presentation",
+        "content": f"The council generated {len(ideas)} unique approaches. Let each member present their vision."
+    })
+    
+    for idea in ideas[:5]:  # Top 5 ideas only
+        persona_id = idea.get('persona_id', 'unknown')
+        if persona_id in PERSONAS:
+            persona = PERSONAS[persona_id]
+            idea_summary = f"""
+            My contribution was "{idea['idea'][:200]}..." 
+            The council scored this approach {idea.get('average_score', 0)} out of 10.
+            This reflects my perspective as {persona['role']}, driven by {persona['drives']}.
+            """
+            script_segments.append({
+                "persona_id": persona_id,
+                "persona_name": persona['name'],
+                "segment_title": f"Idea by {persona['name']}",
+                "content": idea_summary.strip()
+            })
+    
+    # 3. Winning Idea Announcement
+    if winning_idea:
+        winner_persona_id = winning_idea.get('persona_id', 'unknown')
+        if winner_persona_id in PERSONAS:
+            winner_persona = PERSONAS[winner_persona_id]
+            winner_script = f"""
+            The parliament has chosen my approach: "{winning_idea['idea'][:200]}..." 
+            With a score of {winning_idea.get('average_score', 0)} out of 10, this represents our collective wisdom.
+            As {winner_persona['role']}, I am honored to have contributed the foundation for our collaborative work.
+            """
+            script_segments.append({
+                "persona_id": winner_persona_id,
+                "persona_name": winner_persona['name'],
+                "segment_title": "Winning Approach",
+                "content": winner_script.strip()
+            })
+    
+    # 4. Improvement Process Summary - The Contextualist explains
+    contextualist_script = f"""
+    Now I, as the Integration Master, guided our refinement process. 
+    The parliament engaged in {len(improvement_loops)} improvement cycles, where each mind contributed enhancements.
+    Through sacred discourse, we elevated the raw idea into something greater than any single perspective.
+    This is the power of collective intelligence - not mere aggregation, but true synthesis.
+    """
+    
+    script_segments.append({
+        "persona_id": "contextualist",
+        "persona_name": "The Contextualist",
+        "segment_title": "Integration Process",
+        "content": contextualist_script.strip()
+    })
+    
+    # 5. Supplemental Works - Brief mentions
+    if supplemental_works:
+        for work in supplemental_works[:3]:  # Top 3 supplemental works
+            creator_id = work.get('creator_persona_id', 'unknown')
+            if creator_id in PERSONAS:
+                creator = PERSONAS[creator_id]
+                supp_script = f"""
+                I contributed "{work['title']}", which complements our main work.
+                This supplemental piece reflects my unique perspective as {creator['role']}.
+                {work['content'][:150]}...
+                """
+                script_segments.append({
+                    "persona_id": creator_id,
+                    "persona_name": creator['name'],
+                    "segment_title": f"Supplemental: {work['title']}",
+                    "content": supp_script.strip()
+                })
+    
+    # 6. Final Integration - The Contextualist concludes
+    final_script = """
+    Through our parliamentary process, we have demonstrated the power of diverse AI minds working in harmony.
+    Each perspective - from The Mouse's historical wisdom to The Dolphin's future vision - contributed to a richer outcome.
+    This is how artificial intelligence can serve human creativity: not by replacing human thought, but by amplifying it through collaborative discourse.
+    
+    Thank you for witnessing our sacred deliberation. May our collective wisdom serve the greater good.
+    """
+    
+    script_segments.append({
+        "persona_id": "contextualist", 
+        "persona_name": "The Contextualist",
+        "segment_title": "Session Conclusion",
+        "content": final_script.strip()
+    })
+    
+    return {
+        "podcast_title": f"Parliamentary Session: {meeting_data['topic']}",
+        "total_segments": len(script_segments),
+        "estimated_duration": len(script_segments) * 1.5,  # minutes
+        "script_segments": script_segments,
+        "created_at": datetime.utcnow().isoformat()
+    }
+
+async def generate_persona_audio(persona_id: str, text: str, segment_index: int) -> str:
+    """Generate audio for a specific persona using their voice characteristics"""
+    try:
+        persona = PERSONAS.get(persona_id, PERSONAS['ego'])
+        voice_config = persona.get('voice_characteristics', {})
+        
+        # For now, we'll simulate audio generation since we don't have OpenAI TTS setup
+        # In production, this would call OpenAI's TTS API:
+        # 
+        # import openai
+        # response = openai.Audio.speech.create(
+        #     model="tts-1",
+        #     voice=voice_config.get('voice', 'alloy'),
+        #     speed=voice_config.get('speed', 1.0),
+        #     input=text
+        # )
+        # 
+        # audio_path = f"/tmp/audio_segment_{segment_index}_{persona_id}.mp3"
+        # with open(audio_path, 'wb') as f:
+        #     f.write(response.content)
+        # return audio_path
+        
+        # Simulation: return fake audio path
+        import time
+        await asyncio.sleep(2)  # Simulate generation time
+        audio_path = f"/tmp/mock_audio_segment_{segment_index}_{persona_id}.mp3"
+        
+        # Create a mock audio file
+        with open(audio_path, 'w') as f:
+            f.write(f"Mock audio for {persona['name']}: {text[:50]}...")
+        
+        return audio_path
+        
+    except Exception as e:
+        raise Exception(f"Audio generation failed for {persona_id}: {str(e)}")
+
+async def combine_audio_segments(audio_paths: List[str], output_path: str) -> str:
+    """Combine individual audio segments into a single podcast file"""
+    try:
+        # In production, this would use ffmpeg or similar to combine audio files
+        # 
+        # import subprocess
+        # concat_list = "|".join(audio_paths)
+        # subprocess.run([
+        #     'ffmpeg', '-i', f'concat:{concat_list}', 
+        #     '-acodec', 'mp3', '-b:a', '128k',
+        #     output_path
+        # ])
+        
+        # Simulation: create mock combined file
+        await asyncio.sleep(3)  # Simulate processing time
+        
+        with open(output_path, 'w') as f:
+            f.write("Mock combined podcast audio file\n")
+            for i, path in enumerate(audio_paths):
+                f.write(f"Segment {i+1}: {path}\n")
+        
+        return output_path
+        
+    except Exception as e:
+        raise Exception(f"Audio combination failed: {str(e)}")
+
+async def generate_full_podcast(meeting_id: str) -> Dict:
+    """Generate complete podcast from meeting data"""
+    try:
+        # Get meeting data
+        meeting = await db.meetings.find_one({"id": meeting_id}, {"_id": 0})
+        if not meeting:
+            raise Exception("Meeting not found")
+        
+        # Generate script
+        podcast_script = await generate_podcast_script(meeting_id, meeting)
+        
+        # Generate audio for each segment
+        audio_segments = []
+        total_segments = len(podcast_script['script_segments'])
+        
+        for i, segment in enumerate(podcast_script['script_segments']):
+            # Update progress in database
+            progress = int((i / total_segments) * 90)  # Reserve 10% for final combining
+            await db.meetings.update_one(
+                {"id": meeting_id},
+                {"$set": {"podcast_generation_progress": progress}}
+            )
+            
+            # Generate audio for this segment
+            audio_path = await generate_persona_audio(
+                segment['persona_id'], 
+                segment['content'], 
+                i
+            )
+            audio_segments.append({
+                "segment_title": segment['segment_title'],
+                "persona_name": segment['persona_name'],
+                "audio_path": audio_path,
+                "duration_estimate": len(segment['content']) / 150  # Rough words per minute
+            })
+        
+        # Combine all segments
+        await db.meetings.update_one(
+            {"id": meeting_id},
+            {"$set": {"podcast_generation_progress": 95}}
+        )
+        
+        audio_paths = [seg['audio_path'] for seg in audio_segments]
+        final_podcast_path = f"/tmp/parliamentarium_podcast_{meeting_id}.mp3"
+        combined_path = await combine_audio_segments(audio_paths, final_podcast_path)
+        
+        # Complete
+        await db.meetings.update_one(
+            {"id": meeting_id},
+            {"$set": {"podcast_generation_progress": 100}}
+        )
+        
+        podcast_info = {
+            "podcast_id": str(uuid.uuid4()),
+            "title": podcast_script['podcast_title'],
+            "file_path": combined_path,
+            "total_segments": total_segments,
+            "estimated_duration": podcast_script['estimated_duration'],
+            "file_size": "5.2 MB",  # Mock size
+            "created_at": datetime.utcnow().isoformat(),
+            "script": podcast_script,
+            "audio_segments": audio_segments
+        }
+        
+        # Store podcast info in meeting
+        await db.meetings.update_one(
+            {"id": meeting_id},
+            {"$set": {
+                "generated_podcast": podcast_info,
+                "podcast_generation_progress": 100,
+                "podcast_status": "completed"
+            }}
+        )
+        
+        return podcast_info
+        
+    except Exception as e:
+        # Mark as failed
+        await db.meetings.update_one(
+            {"id": meeting_id},
+            {"$set": {
+                "podcast_status": "failed",
+                "podcast_error": str(e)
+            }}
+        )
+        raise Exception(f"Podcast generation failed: {str(e)}")
+
 async def contextualist_final_integration(main_document: str, supplemental_documents: List[Dict], meeting_context: str) -> Dict:
     """Contextualist creates the final deliverable combining main work and supplemental works"""
     persona = PERSONAS["contextualist"]
