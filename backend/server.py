@@ -216,11 +216,29 @@ class MeetingSession(BaseModel):
     current_idea_index: int = 0
     discussion_round: int = 0
     supplemental_works: List[Dict] = Field(default_factory=list)
+    improvement_loops: List[Dict] = Field(default_factory=list)
+    current_improvement_index: int = 0
     amendment_round: int = 0
     current_supplement_index: int = 0
     user_pauses: List[Dict] = Field(default_factory=list)
     final_report: Optional[Dict] = None
     is_paused: bool = False
+
+class ImprovementLoop(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    supplemental_work_id: str
+    improvements: List[Dict] = Field(default_factory=list)
+    improvement_critiques: List[Dict] = Field(default_factory=list)
+    creator_responses: List[Dict] = Field(default_factory=list)
+    final_improved_version: Optional[str] = None
+
+class Improvement(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    suggester_persona_id: str
+    suggester_name: str
+    improvement_text: str
+    critiques: List[Dict] = Field(default_factory=list)
+    creator_response: Optional[Dict] = None
 
 class SupplementalWork(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
