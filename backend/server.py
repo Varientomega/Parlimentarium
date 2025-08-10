@@ -1156,13 +1156,83 @@ async def finalize_meeting(session_id: str):
     # Generate final report
     final_report = await generate_final_report(winner, ideas, meeting['topic'])
     
-    # Update meeting to supplemental phase
+    # Update meeting to main idea improvement phase (Phase 4.5)
     await db.meetings.update_one(
         {"id": session_id},
-        {"$set": {"final_report": final_report, "phase": "supplemental", "status": "supplemental"}}
+        {"$set": {"final_report": final_report, "phase": "main_improvements", "status": "main_improvements"}}
     )
     
-    return {"message": "Meeting finalized, ready for supplemental works", "final_report": final_report, "winning_idea": winner}
+    return {"message": "Meeting finalized, ready for main idea improvements", "final_report": final_report, "winning_idea": winner}
+
+@api_router.post("/meetings/{session_id}/improve-main-idea")
+async def improve_main_winning_idea(session_id: str):
+    """Phase 4.5: Improve the main winning idea with all personas"""
+    meeting = await db.meetings.find_one({"id": session_id}, {"_id": 0})
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    
+    if not meeting.get('final_report'):
+        raise HTTPException(status_code=400, detail="Meeting must be finalized first")
+    
+    winning_idea = meeting['final_report']['winning_idea']
+    meeting_context = f"Topic: {meeting['topic']}. Description: {meeting.get('description', '')}"
+    
+    # Step 1: Get improvements from all personas (except Contextualist and creator)
+    improvements = await get_improvements_for_main_idea(winning_idea, meeting_context)
+    
+    # Step 2: Get critiques for each improvement
+    for improvement in improvements:
+        critiques = await get_main_idea_improvement_critiques(improvement, winning_idea, meeting_context)
+        improvement['critiques'] = critiques
+    
+    # Step 3: Get creator's response to each improvement
+    for improvement in improvements:
+        creator_response = await get_main_creator_response_to_improvement(winning_idea, improvement, meeting_context)
+        improvement['creator_response'] = creator_response
+    
+    # Step 4: Contextualist adds their improvement and integrates everything
+    contextualist_integration = await contextualist_main_idea_improvement_and_integration(winning_idea, improvements, meeting_context)
+    
+    # Create main idea improvement record
+    main_improvement_record = {
+        "id": str(uuid.uuid4()),
+        "original_idea": winning_idea['idea'],
+        "improvements": improvements,
+        "contextualist_integration": contextualist_integration,
+        "accepted_improvements": len([imp for imp in improvements if imp.get('creator_response', {}).get('decision') == 'AGREE']),
+        "final_enhanced_idea": contextualist_integration['integrated_main_idea']
+    }
+    
+    # Update the winning idea with the enhanced version
+    enhanced_winning_idea = winning_idea.copy()
+    enhanced_winning_idea['idea'] = contextualist_integration['integrated_main_idea']
+    enhanced_winning_idea['enhancement_history'] = {
+        "original_idea": winning_idea['idea'],
+        "improvements_applied": contextualist_integration['total_accepted_improvements'],
+        "contextualist_integration": True
+    }
+    
+    # Update final report with enhanced idea
+    final_report = meeting['final_report']
+    final_report['winning_idea'] = enhanced_winning_idea
+    final_report['main_idea_improvements'] = main_improvement_record
+    
+    # Update meeting to supplemental works phase
+    await db.meetings.update_one(
+        {"id": session_id},
+        {"$set": {
+            "final_report": final_report,
+            "main_idea_improvements": main_improvement_record,
+            "phase": "supplemental",
+            "status": "supplemental"
+        }}
+    )
+    
+    return {
+        "message": "Main idea improvement completed, ready for supplemental works",
+        "enhanced_idea": contextualist_integration['integrated_main_idea'],
+        "improvement_record": main_improvement_record
+    }
 
 @api_router.post("/meetings/{session_id}/generate-supplements")
 async def generate_supplemental_works(session_id: str):
