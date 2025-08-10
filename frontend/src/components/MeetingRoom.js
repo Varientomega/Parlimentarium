@@ -44,11 +44,17 @@ export default function MeetingRoom() {
       const response = await axios.post(`${API}/meetings`, {
         topic: topicData.topic,
         description: topicData.description,
-        proposer: topicData.proposedBy
+        proposer: topicData.proposedBy,
+        is_creation_task: topicData.isCreationTask || false
       });
       
       setMeetingId(response.data.id);
       addMessage("System", "🏛️ The Parliamentarium is now in session. Initializing sacred discourse...", "system");
+      
+      // If creation task with files, upload them first
+      if (topicData.isCreationTask && topicData.uploadedFiles && topicData.uploadedFiles.length > 0) {
+        await uploadFiles(response.data.id, topicData.uploadedFiles);
+      }
       
       // Start deliberation
       await startDeliberation(response.data.id);
@@ -57,6 +63,20 @@ export default function MeetingRoom() {
       addMessage("System", "❌ Failed to convene the parliament. Please try again.", "error");
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const uploadFiles = async (sessionId, files) => {
+    try {
+      addMessage("System", `📁 Uploading ${files.length} reference files for the creation task...`, "system");
+      
+      const fileContents = files.map(file => file.content);
+      await axios.post(`${API}/meetings/${sessionId}/upload-files`, fileContents);
+      
+      addMessage("System", `✅ Successfully uploaded ${files.length} files for council reference.`, "system");
+    } catch (error) {
+      console.error('Error uploading files:', error);
+      addMessage("System", "⚠️ Some files failed to upload, but proceeding with deliberation.", "error");
     }
   };
 
