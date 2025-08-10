@@ -220,8 +220,16 @@ export default function MeetingRoom() {
       creating: '🏗️',
       inspiration: '💡',
       analysis: '🔍',
+      main_improvements: '✨',
+      scaffolding: '🏗️',
+      section_assignment: '📋',
+      section_creation: '✍️',
+      main_document: '📘',
+      supplemental_creation: '📑',
       finalization: '⚖️',
-      completed: '✅'
+      final_integration: '🔮',
+      completed: '✅',
+      deliverable_ready: '📦'
     };
     return icons[phase] || '🔮';
   };
