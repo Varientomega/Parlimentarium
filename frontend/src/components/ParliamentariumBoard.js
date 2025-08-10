@@ -290,6 +290,22 @@ export default function ParliamentariumBoard() {
       <Card className="bg-gray-800/50 border-purple-500/30 mb-8">
         <CardContent className="p-6">
           <h2 className="text-xl font-semibold mb-4">📜 Propose a Matter for Deliberation</h2>
+          
+          {/* Task Type Selection */}
+          <div className="mb-4">
+            <label className="flex items-center space-x-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isCreationTask}
+                onChange={(e) => setIsCreationTask(e.target.checked)}
+                className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+              />
+              <span className="text-sm font-medium">
+                🎨 This is a creation/writing task (enables file uploads and collaborative document creation)
+              </span>
+            </label>
+          </div>
+
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
@@ -299,24 +315,109 @@ export default function ParliamentariumBoard() {
                 className="bg-gray-700/50 border-gray-600"
               />
               <Input
-                placeholder="Topic for discussion"
+                placeholder={isCreationTask ? "What should we create/write?" : "Topic for discussion"}
                 value={newTopic}
                 onChange={(e) => setNewTopic(e.target.value)}
                 className="bg-gray-700/50 border-gray-600"
               />
             </div>
             <Textarea
-              placeholder="Describe the matter in detail..."
+              placeholder={isCreationTask ? "Describe what you want to create in detail..." : "Describe the matter in detail..."}
               value={topicDescription}
               onChange={(e) => setTopicDescription(e.target.value)}
               className="bg-gray-700/50 border-gray-600 min-h-24"
             />
+
+            {/* File Upload Section - Only show for creation tasks */}
+            {isCreationTask && (
+              <div className="border-2 border-dashed border-gray-600 rounded-lg p-6">
+                <div className="text-center">
+                  <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                  <div className="text-lg font-medium text-gray-300 mb-2">
+                    Upload Reference Files (Max 5)
+                  </div>
+                  <div className="text-sm text-gray-400 mb-4">
+                    Documents, images, or other files to help the parliament create your project
+                  </div>
+                  
+                  <div
+                    className={`border-2 border-dashed rounded-lg p-4 transition-colors ${
+                      isDragOver ? 'border-purple-400 bg-purple-900/20' : 'border-gray-500'
+                    }`}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setIsDragOver(true);
+                    }}
+                    onDragLeave={() => setIsDragOver(false)}
+                    onDrop={handleFileDrop}
+                  >
+                    <input
+                      type="file"
+                      multiple
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      id="file-upload"
+                      accept="*/*"
+                    />
+                    <label htmlFor="file-upload" className="cursor-pointer">
+                      <div className="text-center">
+                        <p className="text-sm text-gray-400">
+                          Drop files here or click to browse
+                        </p>
+                        <Button type="button" variant="outline" className="mt-2">
+                          Choose Files
+                        </Button>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Uploaded Files Display */}
+                {uploadedFiles.length > 0 && (
+                  <div className="mt-4">
+                    <h3 className="text-sm font-medium text-gray-300 mb-2">
+                      Uploaded Files ({uploadedFiles.length}/5)
+                    </h3>
+                    <div className="space-y-2">
+                      {uploadedFiles.map((file) => (
+                        <div
+                          key={file.id}
+                          className="flex items-center justify-between bg-gray-700/50 rounded-lg p-3"
+                        >
+                          <div className="flex items-center space-x-3">
+                            <FileText className="h-5 w-5 text-blue-400" />
+                            <div>
+                              <div className="text-sm font-medium text-gray-200">
+                                {file.name}
+                              </div>
+                              <div className="text-xs text-gray-400">
+                                {formatFileSize(file.size)}
+                              </div>
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeFile(file.id)}
+                            className="text-red-400 hover:text-red-300"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             <Button 
               onClick={handleStartMeeting}
               disabled={!newTopic.trim()}
               className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
             >
-              🔮 Convene the Parliament
+              {isCreationTask ? '🎨 Start Creation Parliament' : '🔮 Convene the Parliament'}
             </Button>
           </div>
         </CardContent>
