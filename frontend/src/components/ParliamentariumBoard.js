@@ -8,7 +8,7 @@ import { ScrollArea } from "../components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
 import { 
   History, Eye, Brain, Palette, Landmark, ScanLine, Wand2, 
-  ShieldAlert, Flame, Scale, Shield, Crown, Users, Settings
+  ShieldAlert, Flame, Scale, Shield, Crown, Users, Settings, Upload, X, FileText
 } from "lucide-react";
 
 const personas = [
