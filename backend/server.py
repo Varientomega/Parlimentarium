@@ -566,6 +566,89 @@ async def get_improvement_critiques(improvement: Dict, supplement: Dict, meeting
     
     return critiques
 
+async def contextualist_supplement_improvement_and_integration(supplement: Dict, improvements: List[Dict], meeting_context: str) -> Dict:
+    """Contextualist adds their improvement and integrates all accepted improvements for supplemental work"""
+    persona = PERSONAS["contextualist"]
+    
+    # Step 1: Contextualist suggests their own improvement
+    improvements_summary = "\n".join([
+        f"- {imp['suggester_name']}: {imp['improvement_text']} [{imp['creator_response']['decision'] if imp['creator_response'] else 'PENDING'}]"
+        for imp in improvements
+    ])
+    
+    contextualist_improvement_prompt = f"""
+    Supplemental Work: "{supplement['title']}" by {supplement['creator_name']}
+    Content: {supplement['content']}
+    
+    Other council members have suggested these improvements:
+    {improvements_summary}
+    
+    Context: {meeting_context}
+    
+    As {persona['name']}, the Integration Master who goes last, suggest your own improvement to this supplemental work.
+    Consider your role as synthesizer and your personality - focus on integration, emotional resonance, and real-world practicality.
+    
+    Your improvement suggestion:
+    """
+    
+    contextualist_improvement = await get_persona_response("contextualist", contextualist_improvement_prompt, meeting_context)
+    
+    # Step 2: Contextualist integrates all accepted improvements
+    accepted_improvements = [
+        imp for imp in improvements 
+        if imp.get('creator_response', {}).get('decision') == 'AGREE'
+    ]
+    
+    integration_prompt = f"""
+    Original Supplemental Work:
+    TITLE: {supplement['title']}
+    CONTENT: {supplement['content']}
+    CREATOR: {supplement['creator_name']}
+    
+    Accepted Improvements:
+    {chr(10).join([f"- {imp['suggester_name']}: {imp['improvement_text']}" for imp in accepted_improvements])}
+    
+    Your Own Improvement: {contextualist_improvement}
+    
+    Context: {meeting_context}
+    
+    As {persona['name']}, the Integration Master, create a unified, enhanced version of this supplemental work that:
+    1. Preserves the creator's original intent and vision
+    2. Meaningfully incorporates all accepted improvements
+    3. Adds your own synthesizing perspective for emotional resonance and practicality
+    4. Creates a coherent, integrated supplemental work
+    5. Ensures it complements the main winning idea effectively
+    
+    Provide your integrated version:
+    INTEGRATED_SUPPLEMENT: [Complete enhanced version of the supplemental work]
+    INTEGRATION_NOTES: [How you wove everything together and why]
+    """
+    
+    integration_response = await get_persona_response("contextualist", integration_prompt, meeting_context)
+    
+    # Parse integration response
+    integrated_content = supplement['content']  # default
+    integration_notes = integration_response
+    
+    try:
+        if "INTEGRATED_SUPPLEMENT:" in integration_response:
+            integrated_part = integration_response.split("INTEGRATED_SUPPLEMENT:")[1].split("INTEGRATION_NOTES:")[0].strip()
+            integrated_content = integrated_part
+            
+        if "INTEGRATION_NOTES:" in integration_response:
+            notes_part = integration_response.split("INTEGRATION_NOTES:")[1].strip()
+            integration_notes = notes_part
+    except:
+        pass
+    
+    return {
+        "contextualist_improvement": contextualist_improvement,
+        "integrated_supplement": integrated_content,
+        "integration_notes": integration_notes,
+        "total_accepted_improvements": len(accepted_improvements),
+        "original_content": supplement['content']
+    }
+
 async def get_creator_response_to_improvement(supplement: Dict, improvement: Dict, meeting_context: str) -> Dict:
     """Original creator responds to an improvement suggestion"""
     creator_persona = PERSONAS[supplement['creator_persona_id']]
