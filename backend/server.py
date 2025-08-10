@@ -706,13 +706,161 @@ async def finalize_meeting(session_id: str):
     # Generate final report
     final_report = await generate_final_report(winner, ideas, meeting['topic'])
     
+    # Update meeting to supplemental phase
+    await db.meetings.update_one(
+        {"id": session_id},
+        {"$set": {"final_report": final_report, "phase": "supplemental", "status": "supplemental"}}
+    )
+    
+    return {"message": "Meeting finalized, ready for supplemental works", "final_report": final_report, "winning_idea": winner}
+
+@api_router.post("/meetings/{session_id}/generate-supplements")
+async def generate_supplemental_works(session_id: str):
+    """Phase 5: Generate supplemental works for the winning idea"""
+    meeting = await db.meetings.find_one({"id": session_id}, {"_id": 0})
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    
+    if not meeting.get('final_report'):
+        raise HTTPException(status_code=400, detail="Meeting must be finalized first")
+    
+    winning_idea = meeting['final_report']['winning_idea']
+    meeting_context = f"Topic: {meeting['topic']}. Description: {meeting.get('description', '')}"
+    
+    # Generate supplemental works
+    supplemental_works = await get_supplemental_works(session_id, winning_idea)
+    
+    # Update meeting
+    await db.meetings.update_one(
+        {"id": session_id},
+        {"$set": {"supplemental_works": supplemental_works, "phase": "amendments", "current_supplement_index": 0}}
+    )
+    
+    return {"message": "Supplemental works generated", "supplemental_works": supplemental_works}
+
+@api_router.post("/meetings/{session_id}/process-amendments/{supplement_index}")
+async def process_amendments(session_id: str, supplement_index: int):
+    """Phase 6: Process amendments for a specific supplemental work"""
+    meeting = await db.meetings.find_one({"id": session_id}, {"_id": 0})
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    
+    supplemental_works = meeting.get('supplemental_works', [])
+    if supplement_index >= len(supplemental_works):
+        raise HTTPException(status_code=400, detail="Invalid supplement index")
+    
+    supplement = supplemental_works[supplement_index]
+    meeting_context = f"Topic: {meeting['topic']}. Winning idea: {meeting['final_report']['winning_idea']['idea']}"
+    
+    # Get amendments from other personas
+    amendments = await get_amendments_for_supplement(supplement, meeting_context)
+    supplement['amendments'] = amendments
+    
+    # Get creator's votes on amendments
+    accepted_amendment_ids = await get_creator_votes_on_amendments(supplement, amendments)
+    supplement['accepted_amendments'] = accepted_amendment_ids
+    
+    # Update amendment statuses
+    for amendment in amendments:
+        amendment['vote_status'] = 'accepted' if amendment['id'] in accepted_amendment_ids else 'rejected'
+    
+    # Update meeting
+    supplemental_works[supplement_index] = supplement
+    await db.meetings.update_one(
+        {"id": session_id},
+        {"$set": {"supplemental_works": supplemental_works, "current_supplement_index": supplement_index + 1}}
+    )
+    
+    return {
+        "message": f"Amendments processed for supplement {supplement_index + 1}",
+        "supplement": supplement,
+        "accepted_amendments": len(accepted_amendment_ids)
+    }
+
+@api_router.post("/meetings/{session_id}/integrate-final")
+async def integrate_final_vision(session_id: str):
+    """Phase 7: Contextualist integrates everything into final vision"""
+    meeting = await db.meetings.find_one({"id": session_id}, {"_id": 0})
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    
+    supplemental_works = meeting.get('supplemental_works', [])
+    winning_idea = meeting['final_report']['winning_idea']
+    meeting_context = f"Topic: {meeting['topic']}. Description: {meeting.get('description', '')}"
+    
+    # Contextualist integration
+    integration = await contextualist_integration(winning_idea, supplemental_works, meeting_context)
+    
+    # Update final report with integration
+    final_report = meeting['final_report']
+    final_report['integration'] = integration
+    final_report['supplemental_works'] = supplemental_works
+    
     # Update meeting
     await db.meetings.update_one(
         {"id": session_id},
         {"$set": {"final_report": final_report, "phase": "completed", "status": "completed"}}
     )
     
-    return {"message": "Meeting finalized", "final_report": final_report}
+    return {"message": "Final integration complete", "integration": integration}
+
+@api_router.post("/meetings/{session_id}/pause")
+async def pause_meeting(session_id: str, pause_request: UserPauseRequest):
+    """Allow user to pause and provide input"""
+    meeting = await db.meetings.find_one({"id": session_id}, {"_id": 0})
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    
+    # Create user pause record
+    user_pause = {
+        "id": str(uuid.uuid4()),
+        "phase": meeting['phase'],
+        "user_input": pause_request.user_input,
+        "timestamp": datetime.utcnow().isoformat(),
+        "responses": []
+    }
+    
+    # Get responses from 3 key personas
+    key_personas = ["ego", "contextualist", "superscholar"]
+    for persona_id in key_personas:
+        persona = PERSONAS[persona_id]
+        prompt = f"""
+        The human observer has paused our deliberation to provide input:
+        "{pause_request.user_input}"
+        
+        Current phase: {meeting['phase']}
+        Topic: {meeting['topic']}
+        
+        As {persona['name']}, respond to the human's input. How does this affect our deliberation?
+        """
+        
+        response = await get_persona_response(persona_id, prompt)
+        user_pause['responses'].append({
+            "persona_id": persona_id,
+            "persona_name": persona['name'],
+            "response": response
+        })
+    
+    # Add to meeting record
+    user_pauses = meeting.get('user_pauses', [])
+    user_pauses.append(user_pause)
+    
+    await db.meetings.update_one(
+        {"id": session_id},
+        {"$set": {"user_pauses": user_pauses, "is_paused": True}}
+    )
+    
+    return {"message": "Meeting paused, council responds to your input", "responses": user_pause['responses']}
+
+@api_router.post("/meetings/{session_id}/resume")
+async def resume_meeting(session_id: str):
+    """Resume meeting after user pause"""
+    await db.meetings.update_one(
+        {"id": session_id},
+        {"$set": {"is_paused": False}}
+    )
+    
+    return {"message": "Meeting resumed"}
 
 @api_router.get("/meetings/{session_id}/report")
 async def get_final_report(session_id: str):
