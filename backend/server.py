@@ -215,7 +215,36 @@ class MeetingSession(BaseModel):
     ideas: List[Dict] = Field(default_factory=list)
     current_idea_index: int = 0
     discussion_round: int = 0
+    supplemental_works: List[Dict] = Field(default_factory=list)
+    amendment_round: int = 0
+    current_supplement_index: int = 0
+    user_pauses: List[Dict] = Field(default_factory=list)
     final_report: Optional[Dict] = None
+    is_paused: bool = False
+
+class SupplementalWork(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    creator_persona_id: str
+    creator_name: str
+    title: str
+    content: str
+    amendments: List[Dict] = Field(default_factory=list)
+    accepted_amendments: List[str] = Field(default_factory=list)
+    integration_notes: Optional[str] = None
+
+class Amendment(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    author_persona_id: str
+    author_name: str
+    content: str
+    vote_status: str = "pending"  # pending, accepted, rejected
+
+class UserPause(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    phase: str
+    user_input: str
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    responses: List[Dict] = Field(default_factory=list)
 
 class PersonaResponse(BaseModel):
     persona_id: str
