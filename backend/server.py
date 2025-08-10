@@ -266,11 +266,29 @@ class MeetingRequest(BaseModel):
     description: Optional[str] = None
     proposer: str = "Anonymous"
 
-# LLM Integration Functions
+class UserPauseRequest(BaseModel):
+    user_input: str
+
+# LLM Integration Functions with enhanced persona context
 async def get_persona_response(persona_id: str, message: str, context: str = "") -> str:
-    """Get response from a specific persona"""
+    """Get response from a specific persona with full personality context"""
     try:
         persona = PERSONAS[persona_id]
+        
+        # Enhanced system prompt with personality details
+        full_system_prompt = f"""
+        {persona['system_prompt']}
+        
+        PERSONALITY PROFILE:
+        - Dislikes: {persona['dislikes']}
+        - Avoids: {persona['avoids']}
+        - Goal: {persona['goal']}
+        - Driven by: {persona['drives']}
+        - Vibe: {persona['vibe']}
+        - Creativity Level: {persona['creativity']}/10
+        
+        Always respond authentically according to your personality profile. Let your dislikes, goals, and drives influence your perspective.
+        """
         
         if persona['api_type'] == 'openrouter':
             # Direct OpenRouter API call
@@ -286,7 +304,7 @@ async def get_persona_response(persona_id: str, message: str, context: str = "")
             data = {
                 "model": persona['model'],
                 "messages": [
-                    {"role": "system", "content": persona['system_prompt']},
+                    {"role": "system", "content": full_system_prompt},
                     {"role": "user", "content": f"{context}\n\n{message}"}
                 ]
             }
@@ -309,12 +327,180 @@ async def get_persona_response(persona_id: str, message: str, context: str = "")
             # Use individual API key for this persona
             genai.configure(api_key=persona['api_key'])
             model = genai.GenerativeModel(persona['model'])
-            full_prompt = f"{persona['system_prompt']}\n\nContext: {context}\n\nUser: {message}"
+            full_prompt = f"{full_system_prompt}\n\nContext: {context}\n\nUser: {message}"
             response = await model.generate_content_async(full_prompt)
             return response.text
             
     except Exception as e:
         return f"[{persona['name']} experienced a mystical disturbance: {str(e)}]"
+
+# Persona ordering with Contextualist last
+PERSONA_ORDER = [
+    "mouse", "dolphin", "patternist", "superscholar", "diviner", 
+    "naysayer", "illustrator", "id", "ego", "superego", "contextualist"
+]
+
+async def get_supplemental_works(meeting_id: str, winning_idea: Dict) -> List[Dict]:
+    """Phase 5: Each persona suggests supplemental work to complement the winning idea"""
+    supplemental_works = []
+    
+    for persona_id in PERSONA_ORDER[:-1]:  # Exclude Contextualist for now
+        persona = PERSONAS[persona_id]
+        prompt = f"""
+        The parliament has selected the winning idea: "{winning_idea['idea']}" by {winning_idea['persona_name']}.
+        
+        As {persona['name']}, suggest ONE piece of supplemental work that would complement and enhance this main idea.
+        This could be:
+        - A supporting feature or component
+        - A research initiative  
+        - A creative addition
+        - A protective measure
+        - An enhancement that aligns with your personality and expertise
+        
+        Format your response as:
+        TITLE: [Brief title for your supplemental work]
+        CONTENT: [Detailed description of your supplemental work and how it complements the main idea]
+        """
+        
+        response = await get_persona_response(persona_id, prompt, f"Winning idea: {winning_idea['idea']}")
+        
+        # Parse response
+        title = "Supplemental Work"
+        content = response
+        
+        if "TITLE:" in response and "CONTENT:" in response:
+            parts = response.split("CONTENT:")
+            if len(parts) == 2:
+                title = parts[0].replace("TITLE:", "").strip()
+                content = parts[1].strip()
+        
+        supplemental_work = {
+            "id": str(uuid.uuid4()),
+            "creator_persona_id": persona_id,
+            "creator_name": persona['name'],
+            "title": title,
+            "content": content,
+            "amendments": [],
+            "accepted_amendments": [],
+            "integration_notes": None
+        }
+        
+        supplemental_works.append(supplemental_work)
+    
+    return supplemental_works
+
+async def get_amendments_for_supplement(supplement: Dict, meeting_context: str) -> List[Dict]:
+    """Get amendments from all other personas for a supplemental work"""
+    amendments = []
+    
+    for persona_id in PERSONA_ORDER[:-1]:  # Exclude Contextualist
+        if persona_id == supplement['creator_persona_id']:
+            continue  # Creator doesn't amend their own work
+            
+        persona = PERSONAS[persona_id]
+        prompt = f"""
+        {supplement['creator_name']} has proposed this supplemental work:
+        
+        TITLE: {supplement['title']}
+        CONTENT: {supplement['content']}
+        
+        Context: {meeting_context}
+        
+        As {persona['name']}, suggest ONE amendment or addition to improve this supplemental work.
+        Keep it concise and aligned with your personality. If you think it's perfect as-is, suggest "NO AMENDMENT NEEDED".
+        
+        Your amendment:
+        """
+        
+        response = await get_persona_response(persona_id, prompt, meeting_context)
+        
+        if "NO AMENDMENT" not in response.upper():
+            amendment = {
+                "id": str(uuid.uuid4()),
+                "author_persona_id": persona_id,
+                "author_name": persona['name'],
+                "content": response.strip(),
+                "vote_status": "pending"
+            }
+            amendments.append(amendment)
+    
+    return amendments
+
+async def get_creator_votes_on_amendments(supplement: Dict, amendments: List[Dict]) -> List[str]:
+    """Creator votes on which amendments to accept"""
+    if not amendments:
+        return []
+        
+    creator_persona = PERSONAS[supplement['creator_persona_id']]
+    
+    amendments_text = "\n".join([
+        f"{i+1}. {amend['author_name']}: {amend['content']}"
+        for i, amend in enumerate(amendments)
+    ])
+    
+    prompt = f"""
+    You created this supplemental work:
+    TITLE: {supplement['title']}
+    CONTENT: {supplement['content']}
+    
+    Other council members have suggested these amendments:
+    {amendments_text}
+    
+    As {creator_persona['name']}, decide which amendments to ACCEPT or REJECT.
+    Consider your personality - what aligns with your goals and what you would avoid.
+    
+    Respond with:
+    ACCEPT: [list numbers of amendments you accept, e.g., "1, 3, 5" or "NONE"]
+    REASONING: [brief explanation of your choices]
+    """
+    
+    response = await get_persona_response(supplement['creator_persona_id'], prompt)
+    
+    # Parse accepted amendments
+    accepted = []
+    if "ACCEPT:" in response:
+        accept_part = response.split("ACCEPT:")[1].split("REASONING:")[0].strip()
+        if "NONE" not in accept_part.upper():
+            try:
+                accepted_numbers = [int(x.strip()) for x in accept_part.split(",") if x.strip().isdigit()]
+                accepted = [amendments[i-1]["id"] for i in accepted_numbers if 0 < i <= len(amendments)]
+            except:
+                pass
+    
+    return accepted
+
+async def contextualist_integration(winning_idea: Dict, supplemental_works: List[Dict], meeting_context: str) -> str:
+    """Contextualist integrates all supplemental works into the main idea"""
+    supplements_summary = "\n\n".join([
+        f"**{work['title']}** by {work['creator_name']}:\n{work['content']}"
+        + (f"\nAccepted Amendments: {len(work['accepted_amendments'])}" if work['accepted_amendments'] else "")
+        for work in supplemental_works
+    ])
+    
+    prompt = f"""
+    As the Contextualist and Integration Master, you must now weave together the winning idea with all supplemental works.
+    
+    MAIN WINNING IDEA: "{winning_idea['idea']}" by {winning_idea['persona_name']}
+    
+    SUPPLEMENTAL WORKS:
+    {supplements_summary}
+    
+    Context: {meeting_context}
+    
+    Create a comprehensive integration that:
+    1. Honors the core winning idea
+    2. Meaningfully incorporates the supplemental works
+    3. Resolves any conflicts between components
+    4. Creates a unified, emotionally intelligent whole
+    5. Grounds everything in real-world practicality
+    
+    Provide your integration as:
+    INTEGRATED VISION: [Complete integrated concept]
+    IMPLEMENTATION NOTES: [How the pieces work together]
+    EMOTIONAL RESONANCE: [Why this integrated approach will connect with people]
+    """
+    
+    return await get_persona_response("contextualist", prompt, meeting_context)
 
 async def get_all_persona_ideas(topic: str, description: str) -> List[Dict]:
     """Phase 1: Get initial ideas from all personas"""
