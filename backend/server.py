@@ -487,6 +487,144 @@ async def get_creator_votes_on_amendments(supplement: Dict, amendments: List[Dic
     
     return accepted
 
+async def get_improvements_for_supplement(supplement: Dict, meeting_context: str) -> List[Dict]:
+    """Each persona suggests improvements to a supplemental work"""
+    improvements = []
+    
+    for persona_id in PERSONA_ORDER[:-1]:  # Exclude Contextualist
+        if persona_id == supplement['creator_persona_id']:
+            continue  # Creator doesn't improve their own work in this phase
+            
+        persona = PERSONAS[persona_id]
+        prompt = f"""
+        {supplement['creator_name']} has created this supplemental work:
+        
+        TITLE: {supplement['title']}
+        CONTENT: {supplement['content']}
+        
+        Context: {meeting_context}
+        
+        As {persona['name']}, suggest ONE specific improvement to make this supplemental work better.
+        Consider your personality - what would you add, change, or enhance based on your dislikes, goals, and drives?
+        
+        Be specific and constructive. Focus on how to make it more effective, creative, or aligned with the overall vision.
+        
+        Your improvement suggestion:
+        """
+        
+        response = await get_persona_response(persona_id, prompt, meeting_context)
+        
+        improvement = {
+            "id": str(uuid.uuid4()),
+            "suggester_persona_id": persona_id,
+            "suggester_name": persona['name'],
+            "improvement_text": response.strip(),
+            "critiques": [],
+            "creator_response": None
+        }
+        improvements.append(improvement)
+    
+    return improvements
+
+async def get_improvement_critiques(improvement: Dict, supplement: Dict, meeting_context: str) -> List[Dict]:
+    """Each persona critiques/notices the suggested improvements"""
+    critiques = []
+    
+    for persona_id in PERSONA_ORDER[:-1]:  # Exclude Contextualist
+        if persona_id == improvement['suggester_persona_id'] or persona_id == supplement['creator_persona_id']:
+            continue  # Suggester and creator don't critique in this phase
+            
+        persona = PERSONAS[persona_id]
+        prompt = f"""
+        Context: {meeting_context}
+        
+        Original Supplemental Work: "{supplement['title']}" by {supplement['creator_name']}
+        {supplement['content']}
+        
+        {improvement['suggester_name']} suggested this improvement:
+        "{improvement['improvement_text']}"
+        
+        As {persona['name']}, provide a brief critique or observation about this improvement suggestion.
+        
+        Consider:
+        - Is it a good improvement? Why or why not?
+        - What are the strengths/weaknesses?
+        - How does it align with your own perspective and personality?
+        - Any concerns or additional thoughts?
+        
+        Keep it concise but insightful:
+        """
+        
+        response = await get_persona_response(persona_id, prompt, meeting_context)
+        
+        critique = {
+            "critiquer_persona_id": persona_id,
+            "critiquer_name": persona['name'],
+            "critique_text": response.strip()
+        }
+        critiques.append(critique)
+    
+    return critiques
+
+async def get_creator_response_to_improvement(supplement: Dict, improvement: Dict, meeting_context: str) -> Dict:
+    """Original creator responds to an improvement suggestion"""
+    creator_persona = PERSONAS[supplement['creator_persona_id']]
+    
+    critiques_text = "\n".join([
+        f"- {critique['critiquer_name']}: {critique['critique_text']}"
+        for critique in improvement['critiques']
+    ]) if improvement['critiques'] else "No critiques provided."
+    
+    prompt = f"""
+    You created this supplemental work:
+    TITLE: {supplement['title']}
+    CONTENT: {supplement['content']}
+    
+    {improvement['suggester_name']} suggested this improvement:
+    "{improvement['improvement_text']}"
+    
+    Other council members provided these observations:
+    {critiques_text}
+    
+    Context: {meeting_context}
+    
+    As {creator_persona['name']}, respond to this improvement suggestion.
+    Consider your personality - your dislikes, goals, and what drives you.
+    
+    Format your response as:
+    DECISION: [AGREE or DISAGREE]
+    REASONING: [Why you agree or disagree, based on your personality and perspective]
+    IMPROVED_VERSION: [If you AGREE, provide your improved version incorporating the suggestion. If DISAGREE, restate your original.]
+    """
+    
+    response = await get_persona_response(supplement['creator_persona_id'], prompt, meeting_context)
+    
+    # Parse response
+    decision = "DISAGREE"  # default
+    reasoning = response
+    improved_version = supplement['content']  # default to original
+    
+    try:
+        if "DECISION:" in response:
+            decision_part = response.split("DECISION:")[1].split("REASONING:")[0].strip()
+            decision = "AGREE" if "AGREE" in decision_part.upper() else "DISAGREE"
+            
+        if "REASONING:" in response:
+            reasoning_part = response.split("REASONING:")[1].split("IMPROVED_VERSION:")[0].strip()
+            reasoning = reasoning_part
+            
+        if "IMPROVED_VERSION:" in response:
+            improved_part = response.split("IMPROVED_VERSION:")[1].strip()
+            improved_version = improved_part
+    except:
+        pass
+    
+    return {
+        "decision": decision,
+        "reasoning": reasoning,
+        "improved_version": improved_version
+    }
+
 async def contextualist_integration(winning_idea: Dict, supplemental_works: List[Dict], meeting_context: str) -> str:
     """Contextualist integrates all supplemental works into the main idea"""
     supplements_summary = "\n\n".join([
