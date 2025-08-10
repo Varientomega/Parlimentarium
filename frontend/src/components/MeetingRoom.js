@@ -203,6 +203,79 @@ export default function MeetingRoom() {
     }, 1000);
   };
 
+  const startPodcastGeneration = async () => {
+    if (!meetingId) return;
+    
+    try {
+      setIsGeneratingPodcast(true);
+      setPodcastStatus('generating');
+      
+      const response = await axios.post(`${API}/meetings/${meetingId}/generate-podcast`);
+      addMessage("System", "🎙️ Beginning podcast generation with unique voices for each persona...", "system");
+      
+      // Start polling for progress
+      pollPodcastProgress();
+    } catch (error) {
+      console.error('Error starting podcast generation:', error);
+      addMessage("System", "❌ Failed to start podcast generation. Please try again.", "error");
+      setIsGeneratingPodcast(false);
+    }
+  };
+
+  const pollPodcastProgress = () => {
+    const interval = setInterval(async () => {
+      try {
+        const response = await axios.get(`${API}/meetings/${meetingId}/podcast-progress`);
+        const { progress, status, estimated_time_remaining } = response.data;
+        
+        setPodcastProgress(progress);
+        setPodcastStatus(status);
+        
+        if (status === 'completed') {
+          clearInterval(interval);
+          setIsGeneratingPodcast(false);
+          // Get podcast info
+          const infoResponse = await axios.get(`${API}/meetings/${meetingId}/podcast-info`);
+          setPodcastInfo(infoResponse.data.podcast_info);
+          addMessage("System", "✅ Podcast generation complete! Each persona speaks in their unique voice.", "system");
+        } else if (status === 'failed') {
+          clearInterval(interval);
+          setIsGeneratingPodcast(false);
+          addMessage("System", "❌ Podcast generation failed. Please try again.", "error");
+        }
+      } catch (error) {
+        console.error('Error polling podcast progress:', error);
+        clearInterval(interval);
+        setIsGeneratingPodcast(false);
+      }
+    }, 2000); // Poll every 2 seconds
+  };
+
+  const downloadPodcast = async () => {
+    if (!meetingId) return;
+    
+    try {
+      const response = await axios.get(`${API}/meetings/${meetingId}/download-podcast`, {
+        responseType: 'blob'
+      });
+      
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `parliamentarium_podcast_${meetingId}.mp3`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      addMessage("System", "📥 Podcast download started!", "system");
+    } catch (error) {
+      console.error('Error downloading podcast:', error);
+      addMessage("System", "❌ Failed to download podcast.", "error");
+    }
+  };
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
