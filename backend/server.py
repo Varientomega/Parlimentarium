@@ -1435,13 +1435,248 @@ async def create_meeting(request: MeetingRequest):
     session = MeetingSession(
         topic=request.topic,
         description=request.description,
-        proposer=request.proposer
+        proposer=request.proposer,
+        is_creation_task=getattr(request, 'is_creation_task', False)
     )
     
     # Store in database
     await db.meetings.insert_one(session.dict())
     
     return session
+
+@api_router.post("/meetings/{session_id}/upload-files")
+async def upload_files(session_id: str, files: List[str]):
+    """Upload up to 5 files for the creation task"""
+    meeting = await db.meetings.find_one({"id": session_id}, {"_id": 0})
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    
+    if not meeting.get('is_creation_task', False):
+        raise HTTPException(status_code=400, detail="File upload only available for creation tasks")
+    
+    if len(files) > 5:
+        raise HTTPException(status_code=400, detail="Maximum 5 files allowed")
+    
+    uploaded_files = []
+    for i, file_content in enumerate(files):
+        # Assume base64 encoded file content for simplicity
+        try:
+            import base64
+            decoded_size = len(base64.b64decode(file_content))
+            file_info = {
+                "id": str(uuid.uuid4()),
+                "filename": f"uploaded_file_{i+1}.txt",
+                "content": file_content,
+                "file_type": "text/plain",
+                "size": decoded_size,
+                "upload_timestamp": datetime.utcnow().isoformat()
+            }
+            uploaded_files.append(file_info)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Invalid file content in file {i+1}: {str(e)}")
+    
+    # Update meeting with uploaded files
+    await db.meetings.update_one(
+        {"id": session_id},
+        {"$set": {"uploaded_files": uploaded_files}}
+    )
+    
+    return {"message": f"Successfully uploaded {len(uploaded_files)} files", "files": uploaded_files}
+
+@api_router.post("/meetings/{session_id}/create-scaffolding")
+async def create_project_scaffolding(session_id: str):
+    """Phase 4.6: Contextualist creates project scaffolding after winning idea selection"""
+    meeting = await db.meetings.find_one({"id": session_id}, {"_id": 0})
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    
+    if not meeting.get('is_creation_task', False):
+        raise HTTPException(status_code=400, detail="Scaffolding only available for creation tasks")
+    
+    if not meeting.get('final_report', {}).get('winning_idea'):
+        raise HTTPException(status_code=400, detail="Need winning idea before creating scaffolding")
+    
+    winning_idea = meeting['final_report']['winning_idea']
+    meeting_context = f"Topic: {meeting['topic']}. Description: {meeting.get('description', '')}"
+    uploaded_files = meeting.get('uploaded_files', [])
+    
+    # Contextualist creates scaffolding
+    scaffolding = await contextualist_create_scaffolding(winning_idea, meeting_context, uploaded_files)
+    
+    # Update meeting
+    await db.meetings.update_one(
+        {"id": session_id},
+        {"$set": {"scaffolding_outline": scaffolding, "phase": "section_assignment"}}
+    )
+    
+    return {"message": "Project scaffolding created", "scaffolding": scaffolding}
+
+@api_router.post("/meetings/{session_id}/assign-sections")
+async def assign_work_sections(session_id: str):
+    """Phase 4.7: Contextualist assigns sections to personas"""
+    meeting = await db.meetings.find_one({"id": session_id}, {"_id": 0})
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    
+    scaffolding = meeting.get('scaffolding_outline')
+    if not scaffolding:
+        raise HTTPException(status_code=400, detail="Need scaffolding before assigning sections")
+    
+    meeting_context = f"Topic: {meeting['topic']}. Description: {meeting.get('description', '')}"
+    
+    # Contextualist assigns sections
+    assignments = await contextualist_assign_sections(scaffolding, meeting_context)
+    
+    # Update meeting
+    await db.meetings.update_one(
+        {"id": session_id},
+        {"$set": {"section_assignments": assignments, "phase": "section_creation"}}
+    )
+    
+    return {"message": f"Assigned {len(assignments)} sections to personas", "assignments": assignments}
+
+@api_router.post("/meetings/{session_id}/complete-section/{assignment_index}")
+async def complete_section_work(session_id: str, assignment_index: int):
+    """Phase 4.8: Persona completes their assigned section"""
+    meeting = await db.meetings.find_one({"id": session_id}, {"_id": 0})
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    
+    assignments = meeting.get('section_assignments', [])
+    if assignment_index >= len(assignments):
+        raise HTTPException(status_code=400, detail="Invalid assignment index")
+    
+    assignment = assignments[assignment_index]
+    if assignment['completion_status'] != 'pending':
+        raise HTTPException(status_code=400, detail="Section already completed or in progress")
+    
+    meeting_context = f"Topic: {meeting['topic']}. Project: {meeting.get('scaffolding_outline', {}).get('project_title', '')}"
+    uploaded_files = meeting.get('uploaded_files', [])
+    
+    # Mark as in progress
+    assignment['completion_status'] = 'in_progress'
+    
+    # Persona completes the section
+    section_content = await persona_complete_section(assignment, meeting_context, uploaded_files)
+    assignment['completed_content'] = section_content
+    assignment['completion_status'] = 'completed'
+    
+    # Update meeting
+    assignments[assignment_index] = assignment
+    completed_sections = meeting.get('completed_sections', [])
+    completed_sections.append(assignment)
+    
+    await db.meetings.update_one(
+        {"id": session_id},
+        {"$set": {
+            "section_assignments": assignments,
+            "completed_sections": completed_sections
+        }}
+    )
+    
+    return {"message": f"Section '{assignment['section_title']}' completed", "assignment": assignment}
+
+@api_router.post("/meetings/{session_id}/combine-main-document")
+async def create_main_document(session_id: str):
+    """Phase 4.9: Contextualist combines all sections into main document"""
+    meeting = await db.meetings.find_one({"id": session_id}, {"_id": 0})
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    
+    assignments = meeting.get('section_assignments', [])
+    scaffolding = meeting.get('scaffolding_outline', {})
+    
+    # Check all sections are completed
+    incomplete_sections = [a for a in assignments if a['completion_status'] != 'completed']
+    if incomplete_sections:
+        raise HTTPException(status_code=400, detail=f"{len(incomplete_sections)} sections still incomplete")
+    
+    meeting_context = f"Topic: {meeting['topic']}. Project: {scaffolding.get('project_title', '')}"
+    
+    # Contextualist combines sections
+    main_document = await contextualist_combine_sections(assignments, scaffolding, meeting_context)
+    
+    # Update meeting
+    await db.meetings.update_one(
+        {"id": session_id},
+        {"$set": {"main_document": main_document, "phase": "supplemental_creation"}}
+    )
+    
+    return {"message": "Main document created", "document_preview": main_document[:500] + "..."}
+
+@api_router.post("/meetings/{session_id}/create-supplemental-documents")
+async def create_supplemental_documents(session_id: str):
+    """Phase 4.10: Personas create their supplemental documents"""
+    meeting = await db.meetings.find_one({"id": session_id}, {"_id": 0})
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    
+    supplemental_works = meeting.get('supplemental_works', [])
+    if not supplemental_works:
+        raise HTTPException(status_code=400, detail="No supplemental works available")
+    
+    meeting_context = f"Topic: {meeting['topic']}. Main document completed."
+    supplemental_documents = []
+    
+    # Each persona creates their supplemental document
+    for supplemental_work in supplemental_works:
+        content = await persona_create_supplemental_document(supplemental_work, meeting_context)
+        doc = {
+            "id": supplemental_work['id'],
+            "title": supplemental_work['title'],
+            "creator_name": supplemental_work['creator_name'],
+            "creator_persona_id": supplemental_work['creator_persona_id'],
+            "content": content,
+            "created_at": datetime.utcnow().isoformat()
+        }
+        supplemental_documents.append(doc)
+    
+    # Update meeting
+    await db.meetings.update_one(
+        {"id": session_id},
+        {"$set": {"supplemental_documents": supplemental_documents, "phase": "final_integration"}}
+    )
+    
+    return {"message": f"Created {len(supplemental_documents)} supplemental documents", "documents": supplemental_documents}
+
+@api_router.post("/meetings/{session_id}/create-final-deliverable")
+async def create_final_deliverable(session_id: str):
+    """Phase 4.11: Contextualist creates final integrated deliverable"""
+    meeting = await db.meetings.find_one({"id": session_id}, {"_id": 0})
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    
+    main_document = meeting.get('main_document')
+    supplemental_documents = meeting.get('supplemental_documents', [])
+    
+    if not main_document:
+        raise HTTPException(status_code=400, detail="Main document not available")
+    
+    meeting_context = f"Topic: {meeting['topic']}. Complete creation project."
+    
+    # Contextualist creates final deliverable
+    final_deliverable = await contextualist_final_integration(main_document, supplemental_documents, meeting_context)
+    
+    # Update meeting
+    await db.meetings.update_one(
+        {"id": session_id},
+        {"$set": {"final_deliverable": final_deliverable, "phase": "completed", "status": "deliverable_ready"}}
+    )
+    
+    return {"message": "Final deliverable created", "deliverable": final_deliverable}
+
+@api_router.get("/meetings/{session_id}/download-deliverable")
+async def download_deliverable(session_id: str):
+    """Download the final integrated deliverable"""
+    meeting = await db.meetings.find_one({"id": session_id}, {"_id": 0})
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    
+    final_deliverable = meeting.get('final_deliverable')
+    if not final_deliverable:
+        raise HTTPException(status_code=400, detail="Final deliverable not available")
+    
+    return {"deliverable": final_deliverable}
 
 @api_router.get("/meetings/{session_id}")
 async def get_meeting(session_id: str):
