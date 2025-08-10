@@ -190,6 +190,53 @@ export default function ParliamentariumBoard() {
   const [isDragOver, setIsDragOver] = useState(false);
   const navigate = useNavigate();
 
+  const handleFileUpload = (event) => {
+    const files = Array.from(event.target.files);
+    processFiles(files);
+  };
+
+  const handleFileDrop = (event) => {
+    event.preventDefault();
+    setIsDragOver(false);
+    const files = Array.from(event.dataTransfer.files);
+    processFiles(files);
+  };
+
+  const processFiles = (files) => {
+    if (files.length + uploadedFiles.length > 5) {
+      alert("Maximum 5 files allowed");
+      return;
+    }
+
+    files.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const fileData = {
+          id: Date.now() + Math.random(),
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          content: e.target.result.split(',')[1] // Remove data:... prefix for base64
+        };
+        
+        setUploadedFiles(prev => [...prev, fileData]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeFile = (fileId) => {
+    setUploadedFiles(prev => prev.filter(f => f.id !== fileId));
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
   const handleStartMeeting = () => {
     if (!newTopic.trim()) return;
     
@@ -197,6 +244,8 @@ export default function ParliamentariumBoard() {
       topic: newTopic,
       description: topicDescription,
       proposedBy: userName || "Anonymous",
+      isCreationTask: isCreationTask,
+      uploadedFiles: uploadedFiles,
       timestamp: new Date().toISOString()
     };
     
