@@ -231,10 +231,26 @@ export default function MeetingRoom() {
       creating: 'Convening Parliament',
       inspiration: 'Gathering Ideas',
       analysis: 'Sacred Analysis',
+      main_improvements: 'Enhancing Main Idea',
+      scaffolding: 'Creating Project Structure',
+      section_assignment: 'Assigning Work Sections',
+      section_creation: 'Collaborative Creation',
+      main_document: 'Document Integration',
+      supplemental_creation: 'Supplemental Works',
       finalization: 'Final Deliberation',
-      completed: 'Session Complete'
+      final_integration: 'Master Integration',
+      completed: 'Session Complete',
+      deliverable_ready: 'Deliverable Ready'
     };
     return titles[phase] || 'Processing';
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   return (
