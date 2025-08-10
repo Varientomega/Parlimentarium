@@ -32,6 +32,8 @@ export default function MeetingRoom() {
     if (stored) {
       const parsed = JSON.parse(stored);
       setMeetingData(parsed);
+      setIsCreationTask(parsed.isCreationTask || false);
+      setUploadedFiles(parsed.uploadedFiles || []);
       createMeeting(parsed);
     } else {
       navigate('/');
