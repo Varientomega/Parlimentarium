@@ -185,6 +185,9 @@ export default function ParliamentariumBoard() {
   const [newTopic, setNewTopic] = useState("");
   const [topicDescription, setTopicDescription] = useState("");
   const [userName, setUserName] = useState("");
+  const [isCreationTask, setIsCreationTask] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [isDragOver, setIsDragOver] = useState(false);
   const navigate = useNavigate();
 
   const handleStartMeeting = () => {
