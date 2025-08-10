@@ -258,9 +258,16 @@ export default function MeetingRoom() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold">🏛️ The Parliamentarium Session</h1>
+          <h1 className="text-3xl font-bold">
+            {isCreationTask ? '🎨 The Parliamentarium Creation Studio' : '🏛️ The Parliamentarium Session'}
+          </h1>
           <p className="text-gray-300">
             Topic: {meetingData?.topic || 'Loading...'}
+            {isCreationTask && (
+              <span className="ml-2 px-2 py-1 bg-purple-600/20 text-purple-300 rounded-full text-xs">
+                Creation Task
+              </span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-4">
@@ -273,6 +280,34 @@ export default function MeetingRoom() {
           </Button>
         </div>
       </div>
+
+      {/* Creation Task Info */}
+      {isCreationTask && uploadedFiles.length > 0 && (
+        <Card className="bg-gray-800/50 border-blue-500/30 mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              📁 Reference Materials ({uploadedFiles.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {uploadedFiles.map((file, index) => (
+                <div key={index} className="flex items-center space-x-3 bg-gray-700/50 rounded-lg p-3">
+                  <div className="text-blue-400">📄</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-gray-200 truncate">
+                      {file.name}
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      {formatFileSize(file.size)}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Meeting Status */}
       <Card className="bg-gray-800/50 border-purple-500/30 mb-6">
