@@ -321,11 +321,25 @@ export default function MeetingRoom() {
           <div className="space-y-4">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-400">Meeting Progress</span>
+                <span className="text-sm text-gray-400">
+                  {isCreationTask ? 'Creation Progress' : 'Meeting Progress'}
+                </span>
                 <span className="text-sm text-gray-400">{progress}%</span>
               </div>
               <Progress value={progress} className="h-2 bg-gray-700" />
             </div>
+            
+            {isCreationTask && (
+              <div className="bg-blue-900/20 rounded-lg p-3 border border-blue-500/30">
+                <h4 className="text-sm font-medium text-blue-300 mb-2">🎨 Creation Workflow Active</h4>
+                <div className="text-xs text-blue-200 space-y-1">
+                  <div>• Parliament will first deliberate and select the best approach</div>
+                  <div>• Contextualist will create project scaffolding and assign sections</div>
+                  <div>• Each persona will contribute their expertise to create sections</div>
+                  <div>• All work will be integrated into a comprehensive deliverable</div>
+                </div>
+              </div>
+            )}
             
             {isProcessing && (
               <div className="flex items-center gap-2">
