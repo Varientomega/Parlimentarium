@@ -1260,7 +1260,7 @@ async def generate_supplemental_works(session_id: str):
 
 @api_router.post("/meetings/{session_id}/process-improvements/{supplement_index}")
 async def process_improvement_loop(session_id: str, supplement_index: int):
-    """Phase 5.5: Process improvement loop for a specific supplemental work"""
+    """Phase 5.5: Process improvement loop for a specific supplemental work with Contextualist integration"""
     meeting = await db.meetings.find_one({"id": session_id}, {"_id": 0})
     if not meeting:
         raise HTTPException(status_code=404, detail="Meeting not found")
@@ -1270,9 +1270,9 @@ async def process_improvement_loop(session_id: str, supplement_index: int):
         raise HTTPException(status_code=400, detail="Invalid supplement index")
     
     supplement = supplemental_works[supplement_index]
-    meeting_context = f"Topic: {meeting['topic']}. Winning idea: {meeting['final_report']['winning_idea']['idea']}"
+    meeting_context = f"Topic: {meeting['topic']}. Enhanced winning idea: {meeting['final_report']['winning_idea']['idea']}"
     
-    # Step 1: Get improvements from all personas
+    # Step 1: Get improvements from all personas (except Contextualist and creator)
     improvements = await get_improvements_for_supplement(supplement, meeting_context)
     
     # Step 2: Get critiques for each improvement
@@ -1281,38 +1281,31 @@ async def process_improvement_loop(session_id: str, supplement_index: int):
         improvement['critiques'] = critiques
     
     # Step 3: Get creator's response to each improvement
-    improved_versions = []
     for improvement in improvements:
         creator_response = await get_creator_response_to_improvement(supplement, improvement, meeting_context)
         improvement['creator_response'] = creator_response
-        
-        if creator_response['decision'] == 'AGREE':
-            improved_versions.append({
-                "improvement_id": improvement['id'],
-                "suggester": improvement['suggester_name'],
-                "improved_content": creator_response['improved_version']
-            })
+    
+    # Step 4: Contextualist adds their improvement and integrates everything
+    contextualist_integration = await contextualist_supplement_improvement_and_integration(supplement, improvements, meeting_context)
     
     # Create improvement loop record
     improvement_loop = {
         "id": str(uuid.uuid4()),
         "supplemental_work_id": supplement['id'],
         "improvements": improvements,
-        "accepted_improvements": len([imp for imp in improvements if imp['creator_response']['decision'] == 'AGREE']),
-        "final_improved_version": supplement['content']  # Will be updated if improvements accepted
+        "contextualist_integration": contextualist_integration,
+        "accepted_improvements": len([imp for imp in improvements if imp.get('creator_response', {}).get('decision') == 'AGREE']),
+        "final_enhanced_supplement": contextualist_integration['integrated_supplement']
     }
     
-    # If any improvements were accepted, update the supplemental work
-    if improved_versions:
-        # Use the last accepted improvement as the final version (or combine them)
-        final_improved = improved_versions[-1]['improved_content']
-        supplement['content'] = final_improved
-        supplement['improvement_history'] = {
-            "original_content": supplement['content'],
-            "improvements_applied": len(improved_versions),
-            "final_version": final_improved
-        }
-        improvement_loop['final_improved_version'] = final_improved
+    # Update the supplemental work with the enhanced version
+    supplement['content'] = contextualist_integration['integrated_supplement']
+    supplement['improvement_history'] = {
+        "original_content": supplement['content'],
+        "improvements_applied": contextualist_integration['total_accepted_improvements'],
+        "contextualist_integration": True,
+        "final_version": contextualist_integration['integrated_supplement']
+    }
     
     # Update meeting record
     supplemental_works[supplement_index] = supplement
@@ -1329,9 +1322,10 @@ async def process_improvement_loop(session_id: str, supplement_index: int):
     )
     
     return {
-        "message": f"Improvement loop completed for supplement {supplement_index + 1}",
+        "message": f"Improvement loop with Contextualist integration completed for supplement {supplement_index + 1}",
         "improvement_loop": improvement_loop,
-        "improved_supplement": supplement
+        "enhanced_supplement": supplement,
+        "contextualist_integration": contextualist_integration
     }
 
 @api_router.post("/meetings/{session_id}/finalize-improvements")
