@@ -2158,10 +2158,9 @@ async def analyze_idea(session_id: str, idea_index: int):
     
     idea = meeting['ideas'][idea_index]
     context = f"Topic: {meeting['topic']}. All ideas being considered: {[i['idea'] for i in meeting['ideas']]}"
-    uploaded_files = meeting.get('uploaded_files', [])
     
-    # Analyze idea with all personas including file context
-    analyzed_idea = await analyze_idea_with_all_personas(idea, context, uploaded_files)
+    # No need to re-send file context - personas already considered it in Phase 1
+    analyzed_idea = await analyze_idea_with_all_personas(idea, context)
     
     # Update meeting
     meeting['ideas'][idea_index] = analyzed_idea
