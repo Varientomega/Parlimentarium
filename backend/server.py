@@ -1664,24 +1664,15 @@ async def get_all_persona_ideas(topic: str, description: str, uploaded_files: Li
     
     return ideas
 
-async def analyze_idea_with_all_personas(idea: Dict, context: str, uploaded_files: List[Dict] = None) -> Dict:
-    """Phase 2: Have all personas analyze and score a specific idea with file context"""
+async def analyze_idea_with_all_personas(idea: Dict, context: str) -> Dict:
+    """Phase 2: Have all personas analyze and score a specific idea (no file context needed - already considered in Phase 1)"""
     tasks = []
-    
-    # Prepare context from uploaded files
-    files_context = ""
-    if uploaded_files:
-        files_summary = "\n".join([
-            f"• {file.get('filename', 'Unknown file')}: Reference file available"
-            for file in uploaded_files
-        ])
-        files_context = f"\n\nContext Files Available:\n{files_summary}\n\nConsider this additional context in your analysis."
     
     for persona_id, persona in PERSONAS.items():
         prompt = f"""
         The parliament is now evaluating this idea: "{idea['idea']}" (proposed by {idea['persona_name']}).
         
-        Context: {context}{files_context}
+        Context: {context}
         
         Please:
         1. Provide your analysis and critique of this idea
