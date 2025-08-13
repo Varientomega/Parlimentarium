@@ -2132,8 +2132,11 @@ async def start_deliberation(session_id: str):
     if not meeting:
         raise HTTPException(status_code=404, detail="Meeting not found")
     
-    # Get ideas from all personas
-    ideas = await get_all_persona_ideas(meeting['topic'], meeting['description'] or "")
+    # Get uploaded files for context
+    uploaded_files = meeting.get('uploaded_files', [])
+    
+    # Get ideas from all personas with file context
+    ideas = await get_all_persona_ideas(meeting['topic'], meeting['description'] or "", uploaded_files)
     
     # Update meeting
     await db.meetings.update_one(
@@ -2141,7 +2144,7 @@ async def start_deliberation(session_id: str):
         {"$set": {"ideas": ideas, "phase": "analysis", "status": "analyzing"}}
     )
     
-    return {"message": "Deliberation started", "ideas": ideas}
+    return {"message": "Deliberation started", "ideas": ideas, "context_files": len(uploaded_files)}
 
 @api_router.post("/meetings/{session_id}/analyze-idea/{idea_index}")
 async def analyze_idea(session_id: str, idea_index: int):
@@ -2155,9 +2158,10 @@ async def analyze_idea(session_id: str, idea_index: int):
     
     idea = meeting['ideas'][idea_index]
     context = f"Topic: {meeting['topic']}. All ideas being considered: {[i['idea'] for i in meeting['ideas']]}"
+    uploaded_files = meeting.get('uploaded_files', [])
     
-    # Analyze idea with all personas
-    analyzed_idea = await analyze_idea_with_all_personas(idea, context)
+    # Analyze idea with all personas including file context
+    analyzed_idea = await analyze_idea_with_all_personas(idea, context, uploaded_files)
     
     # Update meeting
     meeting['ideas'][idea_index] = analyzed_idea
