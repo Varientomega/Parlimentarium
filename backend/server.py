@@ -1774,13 +1774,10 @@ async def create_meeting(request: MeetingRequest):
 
 @api_router.post("/meetings/{session_id}/upload-files")
 async def upload_files(session_id: str, files: List[str]):
-    """Upload up to 5 files for the creation task"""
+    """Upload up to 5 context files for any meeting (discussion or creation task)"""
     meeting = await db.meetings.find_one({"id": session_id}, {"_id": 0})
     if not meeting:
         raise HTTPException(status_code=404, detail="Meeting not found")
-    
-    if not meeting.get('is_creation_task', False):
-        raise HTTPException(status_code=400, detail="File upload only available for creation tasks")
     
     if len(files) > 5:
         raise HTTPException(status_code=400, detail="Maximum 5 files allowed")
@@ -1793,7 +1790,7 @@ async def upload_files(session_id: str, files: List[str]):
             decoded_size = len(base64.b64decode(file_content))
             file_info = {
                 "id": str(uuid.uuid4()),
-                "filename": f"uploaded_file_{i+1}.txt",
+                "filename": f"context_file_{i+1}.txt",
                 "content": file_content,
                 "file_type": "text/plain",
                 "size": decoded_size,
@@ -1809,7 +1806,8 @@ async def upload_files(session_id: str, files: List[str]):
         {"$set": {"uploaded_files": uploaded_files}}
     )
     
-    return {"message": f"Successfully uploaded {len(uploaded_files)} files", "files": uploaded_files}
+    file_purpose = "creation reference" if meeting.get('is_creation_task', False) else "discussion context"
+    return {"message": f"Successfully uploaded {len(uploaded_files)} files as {file_purpose}", "files": uploaded_files}
 
 @api_router.post("/meetings/{session_id}/create-scaffolding")
 async def create_project_scaffolding(session_id: str):
