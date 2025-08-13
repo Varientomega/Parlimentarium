@@ -1632,13 +1632,22 @@ async def contextualist_integration(winning_idea: Dict, supplemental_works: List
     
     return await get_persona_response("contextualist", prompt, meeting_context)
 
-async def get_all_persona_ideas(topic: str, description: str) -> List[Dict]:
-    """Phase 1: Get initial ideas from all personas"""
+async def get_all_persona_ideas(topic: str, description: str, uploaded_files: List[Dict] = None) -> List[Dict]:
+    """Phase 1: Get initial ideas from all personas with uploaded file context"""
     ideas = []
     tasks = []
     
+    # Prepare context from uploaded files
+    files_context = ""
+    if uploaded_files:
+        files_summary = "\n".join([
+            f"• {file.get('filename', 'Unknown file')}: {file.get('summary', 'Context file available for reference')}"
+            for file in uploaded_files
+        ])
+        files_context = f"\n\nUploaded Context Files:\n{files_summary}\n\nPlease consider this context when formulating your response."
+    
     for persona_id, persona in PERSONAS.items():
-        prompt = f"The parliament seeks your wisdom on: '{topic}'. {description}. Provide ONE specific, actionable idea related to this topic. Keep it concise but innovative."
+        prompt = f"The parliament seeks your wisdom on: '{topic}'. {description}. Provide ONE specific, actionable idea related to this topic. Keep it concise but innovative.{files_context}"
         tasks.append(get_persona_response(persona_id, prompt))
     
     responses = await asyncio.gather(*tasks)
