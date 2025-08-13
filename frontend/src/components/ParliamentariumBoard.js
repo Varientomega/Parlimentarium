@@ -328,89 +328,90 @@ export default function ParliamentariumBoard() {
               className="bg-gray-700/50 border-gray-600 min-h-24"
             />
 
-            {/* File Upload Section - Only show for creation tasks */}
-            {isCreationTask && (
-              <div className="border-2 border-dashed border-gray-600 rounded-lg p-6">
-                <div className="text-center">
-                  <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                  <div className="text-lg font-medium text-gray-300 mb-2">
-                    Upload Reference Files (Max 5)
-                  </div>
-                  <div className="text-sm text-gray-400 mb-4">
-                    Documents, images, or other files to help the parliament create your project
-                  </div>
-                  
-                  <div
-                    className={`border-2 border-dashed rounded-lg p-4 transition-colors ${
-                      isDragOver ? 'border-purple-400 bg-purple-900/20' : 'border-gray-500'
-                    }`}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      setIsDragOver(true);
-                    }}
-                    onDragLeave={() => setIsDragOver(false)}
-                    onDrop={handleFileDrop}
-                  >
-                    <input
-                      type="file"
-                      multiple
-                      onChange={handleFileUpload}
-                      className="hidden"
-                      id="file-upload"
-                      accept="*/*"
-                    />
-                    <label htmlFor="file-upload" className="cursor-pointer">
-                      <div className="text-center">
-                        <p className="text-sm text-gray-400">
-                          Drop files here or click to browse
-                        </p>
-                        <Button type="button" variant="outline" className="mt-2">
-                          Choose Files
-                        </Button>
-                      </div>
-                    </label>
-                  </div>
+            {/* File Upload Section - Available for ALL meeting types */}
+            <div className="border-2 border-dashed border-gray-600 rounded-lg p-6">
+              <div className="text-center">
+                <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                <div className="text-lg font-medium text-gray-300 mb-2">
+                  Upload Context Files (Max 5)
                 </div>
+                <div className="text-sm text-gray-400 mb-4">
+                  {isCreationTask 
+                    ? "Documents, images, or files to help the parliament create your project"
+                    : "Documents, research papers, or context files to inform the discussion (e.g., previous white papers, research, data)"
+                  }
+                </div>
+                
+                <div
+                  className={`border-2 border-dashed rounded-lg p-4 transition-colors ${
+                    isDragOver ? 'border-purple-400 bg-purple-900/20' : 'border-gray-500'
+                  }`}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setIsDragOver(true);
+                  }}
+                  onDragLeave={() => setIsDragOver(false)}
+                  onDrop={handleFileDrop}
+                >
+                  <input
+                    type="file"
+                    multiple
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    id="file-upload"
+                    accept="*/*"
+                  />
+                  <label htmlFor="file-upload" className="cursor-pointer">
+                    <div className="text-center">
+                      <p className="text-sm text-gray-400">
+                        Drop files here or click to browse
+                      </p>
+                      <Button type="button" variant="outline" className="mt-2">
+                        Choose Files
+                      </Button>
+                    </div>
+                  </label>
+                </div>
+              </div>
 
-                {/* Uploaded Files Display */}
-                {uploadedFiles.length > 0 && (
-                  <div className="mt-4">
-                    <h3 className="text-sm font-medium text-gray-300 mb-2">
-                      Uploaded Files ({uploadedFiles.length}/5)
-                    </h3>
-                    <div className="space-y-2">
-                      {uploadedFiles.map((file) => (
-                        <div
-                          key={file.id}
-                          className="flex items-center justify-between bg-gray-700/50 rounded-lg p-3"
-                        >
-                          <div className="flex items-center space-x-3">
-                            <FileText className="h-5 w-5 text-blue-400" />
-                            <div>
-                              <div className="text-sm font-medium text-gray-200">
-                                {file.name}
-                              </div>
-                              <div className="text-xs text-gray-400">
-                                {formatFileSize(file.size)}
-                              </div>
+              {/* Uploaded Files Display */}
+              {uploadedFiles.length > 0 && (
+                <div className="mt-4">
+                  <h3 className="text-sm font-medium text-gray-300 mb-2">
+                    Uploaded Files ({uploadedFiles.length}/5)
+                  </h3>
+                  <div className="space-y-2">
+                    {uploadedFiles.map((file) => (
+                      <div
+                        key={file.id}
+                        className="flex items-center justify-between bg-gray-700/50 rounded-lg p-3"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <FileText className="h-5 w-5 text-blue-400" />
+                          <div>
+                            <div className="text-sm font-medium text-gray-200">
+                              {file.name}
+                            </div>
+                            <div className="text-xs text-gray-400">
+                              {formatFileSize(file.size)}
                             </div>
                           </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeFile(file.id)}
-                            className="text-red-400 hover:text-red-300"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
                         </div>
-                      ))}
-                    </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeFile(file.id)}
+                          className="text-red-400 hover:text-red-300"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
                   </div>
-                )}
-              </div>
-            )}
+                </div>
+              )}
+            </div>
 
             <Button 
               onClick={handleStartMeeting}
