@@ -1664,19 +1664,28 @@ async def get_all_persona_ideas(topic: str, description: str, uploaded_files: Li
     
     return ideas
 
-async def analyze_idea_with_all_personas(idea: Dict, context: str) -> Dict:
-    """Phase 2: Have all personas analyze and score a specific idea"""
+async def analyze_idea_with_all_personas(idea: Dict, context: str, uploaded_files: List[Dict] = None) -> Dict:
+    """Phase 2: Have all personas analyze and score a specific idea with file context"""
     tasks = []
+    
+    # Prepare context from uploaded files
+    files_context = ""
+    if uploaded_files:
+        files_summary = "\n".join([
+            f"• {file.get('filename', 'Unknown file')}: Reference file available"
+            for file in uploaded_files
+        ])
+        files_context = f"\n\nContext Files Available:\n{files_summary}\n\nConsider this additional context in your analysis."
     
     for persona_id, persona in PERSONAS.items():
         prompt = f"""
         The parliament is now evaluating this idea: "{idea['idea']}" (proposed by {idea['persona_name']}).
         
-        Context: {context}
+        Context: {context}{files_context}
         
         Please:
         1. Provide your analysis and critique of this idea
-        2. Suggest improvements or concerns
+        2. Suggest improvements or concerns  
         3. Rate it on a scale of 1-10 (1=terrible, 10=brilliant)
         4. Give reasons for your score
         
@@ -1704,11 +1713,11 @@ async def analyze_idea_with_all_personas(idea: Dict, context: str) -> Dict:
                     score_part = parts[1].split("REASONING:")[0].strip()
                     score = float(score_part.split()[0])
                     
-                if "REASONING:" in response:
-                    reasoning = response.split("REASONING:")[1].strip()
-                    
-                if "ANALYSIS:" in response:
-                    analysis = response.split("ANALYSIS:")[1].split("SCORE:")[0].strip()
+            if "REASONING:" in response:
+                reasoning = response.split("REASONING:")[1].strip()
+                
+            if "ANALYSIS:" in response:
+                analysis = response.split("ANALYSIS:")[1].split("SCORE:")[0].strip()
         except:
             pass
             
