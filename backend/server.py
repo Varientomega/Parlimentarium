@@ -525,6 +525,37 @@ async def get_persona_response(persona_id: str, message: str, context: str = "",
     if not selected_api_key:
         return f"[{persona['name']} experienced a mystical disturbance: No working API keys available]"
     
+    # Generate text response first
+    text_response = await get_text_response(persona_id, persona, full_system_prompt, message, context, selected_key_id, selected_api_key, personas_config)
+    
+    # Generate image for specific personas
+    if persona_id in ["illustrator", "contextualist"]:
+        try:
+            # Create image prompt based on the text response and persona
+            if persona_id == "illustrator":
+                image_prompt = f"Court illustration representing: {text_response[:200]}... Topic: {message[:100]}"
+                style = "court_illustrator"
+            else:  # contextualist
+                image_prompt = f"Conceptual visualization of: {text_response[:200]}... Context: {context[:100]}"
+                style = "contextualist"
+            
+            image_result = await generate_image(image_prompt, style)
+            
+            if image_result["success"]:
+                # Combine text response with image
+                return f"{text_response}\n\n🎨 **Generated Illustration**: {image_result['image_url']}\n*Image prompt: {image_result['original_prompt']}*"
+            else:
+                # Return text response with image generation note
+                return f"{text_response}\n\n🎨 *[Image generation temporarily unavailable: {image_result.get('error', 'Unknown error')}]*"
+                
+        except Exception as e:
+            # Return text response with error note
+            return f"{text_response}\n\n🎨 *[Image generation error: {str(e)}]*"
+    
+    return text_response
+
+async def get_text_response(persona_id: str, persona: Dict, full_system_prompt: str, message: str, context: str, selected_key_id: str, selected_api_key: str, personas_config: Dict = None) -> str:
+    """Get text response from persona with error handling"""
     # Determine API type and make call
     try:
         if selected_key_id == 'emergent_llm':
