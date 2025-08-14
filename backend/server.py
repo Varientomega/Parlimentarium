@@ -2507,8 +2507,12 @@ async def test_api_endpoint(
 # ============================================================================
 # ORIGINAL PARLIAMENTARIUM ENDPOINTS (Enhanced with User Context)
 # ============================================================================
-async def create_meeting(request: MeetingRequest):
-    """Start a new parliamentary session with audio mode selection"""
+@api_router.post("/meetings", response_model=MeetingSession)
+async def create_meeting(
+    request: MeetingRequest,
+    current_user: Optional[User] = Depends(get_current_user)
+):
+    """Start a new parliamentary session with user context"""
     session = MeetingSession(
         topic=request.topic,
         description=request.description,
@@ -2527,6 +2531,11 @@ async def create_meeting(request: MeetingRequest):
         if request.audio_mode == 'podcast':
             session_data['auto_generate_podcast'] = True
             session_data['podcast_status'] = 'scheduled'
+    
+    # Add user context if authenticated
+    if current_user:
+        session_data['user_id'] = current_user.id
+        session_data['user_tier'] = current_user.subscription_tier.value
     
     # Store in database
     await db.meetings.insert_one(session_data)
