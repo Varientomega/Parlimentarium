@@ -227,15 +227,23 @@ export default function MeetingRoom() {
     try {
       setIsGeneratingPodcast(true);
       setPodcastStatus('generating');
+      setPodcastProgress(0);
+      
+      addMessage("System", "🎙️ Starting podcast generation with AI voices...", "system");
       
       const response = await axios.post(`${API}/meetings/${meetingId}/generate-podcast`);
-      addMessage("System", "🎙️ Beginning podcast generation with unique voices for each persona...", "system");
       
-      // Start polling for progress
-      pollPodcastProgress();
+      if (response.data.success) {
+        // Start polling for progress
+        pollPodcastProgress();
+      } else {
+        throw new Error(response.data.error || "Unknown error");
+      }
     } catch (error) {
       console.error('Error starting podcast generation:', error);
+      setPodcastStatus('failed');
       addMessage("System", "❌ Failed to start podcast generation. Please try again.", "error");
+    } finally {
       setIsGeneratingPodcast(false);
     }
   };
@@ -243,30 +251,62 @@ export default function MeetingRoom() {
   const pollPodcastProgress = () => {
     const interval = setInterval(async () => {
       try {
-        const response = await axios.get(`${API}/meetings/${meetingId}/podcast-progress`);
-        const { progress, status, estimated_time_remaining } = response.data;
+        const response = await axios.get(`${API}/meetings/${meetingId}/podcast-status`);
+        const { generation_progress, generation_status, podcast_info } = response.data;
         
-        setPodcastProgress(progress);
-        setPodcastStatus(status);
+        setPodcastProgress(generation_progress || 0);
         
-        if (status === 'completed') {
+        if (generation_status === 'completed') {
+          setPodcastStatus('completed');
+          setPodcastInfo(podcast_info);
           clearInterval(interval);
-          setIsGeneratingPodcast(false);
-          // Get podcast info
-          const infoResponse = await axios.get(`${API}/meetings/${meetingId}/podcast-info`);
-          setPodcastInfo(infoResponse.data.podcast_info);
-          addMessage("System", "✅ Podcast generation complete! Each persona speaks in their unique voice.", "system");
-        } else if (status === 'failed') {
+          addMessage("System", "✅ Podcast generation completed! Ready for download.", "system");
+        } else if (generation_status === 'failed') {
+          setPodcastStatus('failed');
           clearInterval(interval);
-          setIsGeneratingPodcast(false);
-          addMessage("System", "❌ Podcast generation failed. Please try again.", "error");
+          addMessage("System", "❌ Podcast generation failed.", "error");
         }
       } catch (error) {
         console.error('Error polling podcast progress:', error);
         clearInterval(interval);
-        setIsGeneratingPodcast(false);
+        setPodcastStatus('failed');
       }
-    }, 2000); // Poll every 2 seconds
+    }, 2000);
+    
+    return interval;
+  };
+
+  const streamPodcast = async () => {
+    if (!meetingId || !podcastInfo) return;
+    
+    try {
+      const response = await axios.get(`${API}/meetings/${meetingId}/stream-podcast`, {
+        responseType: 'blob'
+      });
+      
+      const audioBlob = new Blob([response.data], { type: 'audio/mpeg' });
+      const audioUrl = URL.createObjectURL(audioBlob);
+      
+      // Create and play audio with streaming
+      const audio = new Audio(audioUrl);
+      setCurrentAudio(audio);
+      audio.play();
+      
+      audio.onended = () => {
+        URL.revokeObjectURL(audioUrl);
+        setCurrentAudio(null);
+      };
+      
+      audio.onerror = () => {
+        console.error('Error playing streamed audio');
+        URL.revokeObjectURL(audioUrl);
+        setCurrentAudio(null);
+      };
+      
+    } catch (error) {
+      console.error('Error streaming podcast:', error);
+      addMessage("System", "❌ Failed to stream podcast audio.", "error");
+    }
   };
 
   const startNewMeetingFromWinner = () => {
