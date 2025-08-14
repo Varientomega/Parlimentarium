@@ -642,10 +642,122 @@ export default function MeetingRoom() {
                   {finalReport.follow_up_questions}
                 </div>
               </div>
+              
+              {/* New Meeting Button */}
+              <div className="mt-4 pt-4 border-t border-gray-600">
+                <Button
+                  onClick={startNewMeetingFromWinner}
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                >
+                  🔄 Start New Meeting with This Idea
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
       )}
+
+      {/* Real-Time Conversation Control */}
+      <Card className="bg-gray-800/50 border-cyan-500/30 mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            🎛️ Real-Time Conversation Control
+            <Button
+              onClick={toggleRealTimeMode}
+              variant={realTimeMode ? "destructive" : "default"}
+              size="sm"
+            >
+              {realTimeMode ? "Exit Real-Time" : "Enter Real-Time"}
+            </Button>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {!realTimeMode ? (
+            <div className="text-center p-4 bg-cyan-900/20 rounded-lg border border-cyan-500/30">
+              <p className="text-cyan-300 mb-3">🎧 Take control of the conversation!</p>
+              <p className="text-sm text-cyan-200">Listen to each persona speak individually, control the flow, and influence their impact with weight adjustments.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Current Speaker Display */}
+              <div className="bg-cyan-900/20 rounded-lg p-4 border border-cyan-500/30">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-semibold text-cyan-300">
+                    🗣️ Current Speaker: {conversationQueue[currentSpeaker]?.toUpperCase() || "None"}
+                  </h3>
+                  <Badge className="bg-cyan-600/20 text-cyan-300">
+                    {currentSpeaker + 1} of {conversationQueue.length}
+                  </Badge>
+                </div>
+                
+                {/* Speaker Weight Control */}
+                <div className="flex items-center gap-4 mb-4">
+                  <label className="text-sm text-cyan-200 min-w-[100px]">
+                    Influence Weight:
+                  </label>
+                  <select
+                    value={speakerWeights[conversationQueue[currentSpeaker]] || 0}
+                    onChange={(e) => updateSpeakerWeight(conversationQueue[currentSpeaker], parseInt(e.target.value))}
+                    className="bg-gray-700 border border-gray-600 rounded px-3 py-1 text-white"
+                  >
+                    {Array.from({length: 23}, (_, i) => i - 11).map(weight => (
+                      <option key={weight} value={weight}>
+                        {weight > 0 ? '+' : ''}{weight} ({weight === -11 ? '-20' : weight === 11 ? '+20' : weight < 0 ? weight * 1.8 : weight * 1.8})
+                      </option>
+                    ))}
+                  </select>
+                  <span className="text-xs text-gray-400">
+                    (-11 = -20 influence, +11 = +20 influence)
+                  </span>
+                </div>
+                
+                {/* Audio Controls */}
+                <div className="flex gap-3">
+                  <Button
+                    onClick={playCurrentSpeaker}
+                    disabled={isPlaying}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    {isPlaying ? "🔊 Playing..." : "▶️ Play Speaker"}
+                  </Button>
+                  <Button
+                    onClick={stopAudio}
+                    disabled={!isPlaying}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    ⏹️ Stop
+                  </Button>
+                  <Button
+                    onClick={nextSpeaker}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    ⏭️ Next Speaker
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Speaker Weights Summary */}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                {conversationQueue.map((personaId, index) => (
+                  <div
+                    key={personaId}
+                    className={`p-2 rounded text-xs ${
+                      index === currentSpeaker 
+                        ? 'bg-cyan-600/30 border border-cyan-400' 
+                        : 'bg-gray-700/50'
+                    }`}
+                  >
+                    <div className="font-medium">{personaId.toUpperCase()}</div>
+                    <div className="text-gray-400">
+                      Weight: {speakerWeights[personaId] || 0}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Podcast Generation Section */}
       {(currentPhase === 'completed' || finalReport) && (
