@@ -1829,6 +1829,106 @@ async def get_all_persona_ideas(topic: str, description: str, uploaded_files: Li
     
     return ideas
 
+async def analyze_idea_with_weights(idea: Dict, meeting_context: str, speaker_weights: Dict = None, personas_config: Dict = None) -> Dict:
+    """Analyze an idea with all personas, incorporating speaker weights"""
+    current_personas = personas_config if personas_config else PERSONAS
+    analyses = []
+    
+    for persona_id in PERSONA_ORDER:
+        if persona_id not in current_personas:
+            continue
+            
+        persona = current_personas[persona_id]
+        
+        # Get weight for this persona
+        weight = speaker_weights.get(persona_id, 0) if speaker_weights else 0
+        weight_influence = weight * 1.8 if weight != 0 else 0
+        
+        # Create weight-influenced scoring prompt
+        weight_context = ""
+        if weight_influence > 0:
+            weight_context = f"\n\nYour opinion carries extra weight in this evaluation (+{weight_influence:.0f} influence). Your score will have enhanced impact on the final decision."
+        elif weight_influence < 0:
+            weight_context = f"\n\nYour influence is reduced for this evaluation ({weight_influence:.0f} influence). Your score will have diminished impact on the final decision."
+        
+        prompt = f"""
+        Analyze this idea: "{idea['idea']}" proposed by {idea['persona_name']}.
+        
+        Context: {meeting_context}
+        
+        As {persona['name']}, score this idea from 1-10 based on:
+        - Feasibility and practicality
+        - Innovation and creativity  
+        - Alignment with your personality and values
+        - Potential impact and effectiveness
+        
+        {weight_context}
+        
+        Format: SCORE: [number] REASONING: [your analysis]
+        """
+        
+        response = await get_persona_response(persona_id, prompt, meeting_context, personas_config)
+        
+        # Parse score and reasoning
+        score = 5.0  # default
+        reasoning = response
+        
+        try:
+            if "SCORE:" in response and "REASONING:" in response:
+                score_part = response.split("SCORE:")[1].split("REASONING:")[0].strip()
+                reasoning_part = response.split("REASONING:")[1].strip()
+                
+                # Extract numeric score
+                import re
+                score_match = re.search(r'(\d+(?:\.\d+)?)', score_part)
+                if score_match:
+                    score = float(score_match.group(1))
+                    score = max(1.0, min(10.0, score))  # Clamp between 1-10
+                
+                reasoning = reasoning_part
+        except:
+            pass  # Use defaults if parsing fails
+        
+        # Apply weight influence to the score
+        if weight_influence != 0:
+            # Weight influences score impact, not the score itself
+            weighted_score = score + (weight_influence * 0.1)  # Small influence on actual score
+            weighted_score = max(1.0, min(10.0, weighted_score))
+        else:
+            weighted_score = score
+        
+        analysis = {
+            "persona_id": persona_id,
+            "persona_name": persona['name'],
+            "score": weighted_score,
+            "original_score": score,
+            "weight": weight,
+            "weight_influence": weight_influence,
+            "reasoning": reasoning
+        }
+        
+        analyses.append(analysis)
+    
+    # Calculate weighted average score
+    total_score = 0
+    total_weight = 0
+    
+    for analysis in analyses:
+        # Each persona's base weight is 1, plus their speaker weight influence
+        persona_weight = 1.0 + (analysis['weight_influence'] * 0.05)  # Small but meaningful influence
+        total_score += analysis['score'] * persona_weight
+        total_weight += persona_weight
+    
+    average_score = total_score / total_weight if total_weight > 0 else 5.0
+    
+    return {
+        "idea": idea['idea'],
+        "persona_name": idea['persona_name'],
+        "analyses": analyses,
+        "average_score": round(average_score, 1),
+        "total_analyses": len(analyses)
+    }
+
 async def analyze_idea_with_all_personas(idea: Dict, context: str) -> Dict:
     """Phase 2: Have all personas analyze and score a specific idea (no file context needed - already considered in Phase 1)"""
     tasks = []
