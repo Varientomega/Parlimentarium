@@ -705,6 +705,15 @@ class ParliamentaryTester:
             print(f"API Key Tests: {len(api_key_tests)}")
             print(f"API Key Passed: {api_passed}")
             print(f"API Key Success Rate: {(api_passed/len(api_key_tests))*100:.1f}%")
+        
+        # Specific Image Generation Summary
+        image_tests = [r for r in self.test_results if 'Image' in r['test'] or 'Illustrator' in r['test'] or 'Contextualist' in r['test']]
+        if image_tests:
+            print(f"\n🎨 IMAGE GENERATION TESTS:")
+            image_passed = sum(1 for r in image_tests if r['success'])
+            print(f"Image Tests: {len(image_tests)}")
+            print(f"Image Passed: {image_passed}")
+            print(f"Image Success Rate: {(image_passed/len(image_tests))*100:.1f}%")
                     
         return passed == total
 
