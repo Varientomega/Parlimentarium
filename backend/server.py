@@ -2236,8 +2236,106 @@ async def get_podcast_progress(session_id: str):
         "estimated_time_remaining": max(0, (100 - progress) * 0.5) if status == "generating" else 0
     }
 
-@api_router.get("/meetings/{session_id}/download-podcast")
-async def download_podcast(session_id: str):
+@api_router.post("/meetings/{session_id}/generate-speaker-audio")
+async def generate_speaker_audio(session_id: str, request: dict):
+    """Generate audio for a specific speaker with weight influence"""
+    meeting = await db.meetings.find_one({"id": session_id}, {"_id": 0})
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    
+    persona_id = request.get('persona_id')
+    weight = request.get('weight', 0)
+    context = request.get('context', '')
+    
+    if not persona_id or persona_id not in PERSONAS:
+        raise HTTPException(status_code=400, detail="Invalid persona ID")
+    
+    try:
+        # Get meeting-specific persona configuration
+        meeting_personas = await get_meeting_personas(session_id)
+        persona = meeting_personas[persona_id]
+        
+        # Create weight-influenced prompt
+        weight_influence = ""
+        if weight > 0:
+            weight_influence = f"\n\nYour voice carries extra weight in this discussion (+{weight * 1.8:.0f} influence). Speak with additional authority and confidence."
+        elif weight < 0:
+            weight_influence = f"\n\nYour influence is diminished in this discussion ({weight * 1.8:.0f} influence). Speak more tentatively and with less conviction."
+        
+        prompt = f"""As {persona['name']}, respond to the current topic: {context}
+        
+        {weight_influence}
+        
+        Provide a brief, personality-driven response (2-3 sentences max) that reflects your role as {persona['role']} and your personality traits."""
+        
+        # Generate response with weight consideration
+        response_text = await get_persona_response(persona_id, prompt, context, meeting_personas)
+        
+        # Generate TTS audio (mock for now - would integrate with actual TTS)
+        audio_filename = f"speaker_{persona_id}_{session_id}_{uuid.uuid4().hex[:8]}.mp3"
+        audio_path = f"/tmp/{audio_filename}"
+        
+        # Mock audio generation - in production would use OpenAI TTS or similar
+        # For now, return a mock audio URL
+        audio_url = f"/api/audio/{audio_filename}"
+        
+        return {
+            "success": True,
+            "audio_url": audio_url,
+            "text": response_text,
+            "persona_name": persona['name'],
+            "weight": weight,
+            "influence": weight * 1.8
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+@api_router.get("/meetings/{session_id}/stream-podcast")
+async def stream_podcast(session_id: str):
+    """Stream podcast audio for immediate playback"""
+    meeting = await db.meetings.find_one({"id": session_id}, {"_id": 0})
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    
+    podcast_info = meeting.get('generated_podcast')
+    if not podcast_info:
+        raise HTTPException(status_code=400, detail="No podcast available")
+    
+    try:
+        # In production, this would stream the actual audio file
+        # For now, return a mock audio stream
+        from fastapi.responses import Response
+        
+        # Mock audio data - in production would read actual MP3 file
+        mock_audio_data = b"Mock audio data for streaming"
+        
+        return Response(
+            content=mock_audio_data,
+            media_type="audio/mpeg",
+            headers={
+                "Content-Disposition": f"inline; filename=podcast_{session_id}.mp3",
+                "Accept-Ranges": "bytes"
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Streaming error: {str(e)}")
+
+@api_router.get("/meetings/{session_id}/podcast-status")
+async def get_podcast_status(session_id: str):
+    """Get podcast generation status and progress"""
+    meeting = await db.meetings.find_one({"id": session_id}, {"_id": 0})
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    
+    return {
+        "generation_progress": meeting.get('podcast_generation_progress', 0),
+        "generation_status": meeting.get('podcast_status', 'not_started'),
+        "podcast_info": meeting.get('generated_podcast', None)
+    }
     """Download the generated podcast audio file"""
     from fastapi.responses import FileResponse
     import os
