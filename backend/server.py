@@ -2299,8 +2299,11 @@ async def start_deliberation(session_id: str):
     # Get uploaded files for context
     uploaded_files = meeting.get('uploaded_files', [])
     
-    # Get ideas from all personas with file context
-    ideas = await get_all_persona_ideas(meeting['topic'], meeting['description'] or "", uploaded_files)
+    # Get meeting-specific persona configuration
+    meeting_personas = await get_meeting_personas(session_id)
+    
+    # Get ideas from all personas with file context and custom API key assignments
+    ideas = await get_all_persona_ideas(meeting['topic'], meeting['description'] or "", uploaded_files, meeting_personas)
     
     # Update meeting
     await db.meetings.update_one(
