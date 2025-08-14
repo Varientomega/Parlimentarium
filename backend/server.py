@@ -1,11 +1,3 @@
-from fastapi import FastAPI, APIRouter, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from motor.motor_asyncio import AsyncIOMotorClient
-from pydantic import BaseModel, Field
-from typing import List, Dict, Optional
-from datetime import datetime
-import os
-import uuid
 import asyncio
 import json
 from emergentintegrations.llm.chat import LlmChat, UserMessage
@@ -13,6 +5,24 @@ import google.generativeai as genai
 from dotenv import load_dotenv
 from pathlib import Path
 import fal_client
+import uuid
+import os
+from datetime import datetime
+from typing import Dict, List, Optional, Any
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.responses import Response
+from pydantic import BaseModel, Field
+from motor.motor_asyncio import AsyncIOMotorClient
+import traceback
+
+# Import our SaaS platform modules
+from models import *
+from auth import AuthService
+from subscription_service import SubscriptionService
+from dev_dashboard import DevDashboardService
+from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionRequest, CheckoutStatusResponse
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
