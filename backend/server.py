@@ -2462,6 +2462,52 @@ async def download_podcast(session_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Download error: {str(e)}")
 
+async def auto_generate_podcast(session_id: str):
+    """Auto-generate podcast in background for completed meetings in podcast mode"""
+    try:
+        meeting = await db.meetings.find_one({"id": session_id}, {"_id": 0})
+        if not meeting:
+            print(f"Auto-podcast: Meeting {session_id} not found")
+            return
+        
+        # Check if meeting is completed
+        if meeting.get('status') != 'completed':
+            print(f"Auto-podcast: Meeting {session_id} not completed yet")
+            return
+        
+        # Check if podcast already exists
+        if meeting.get('generated_podcast'):
+            print(f"Auto-podcast: Podcast already exists for {session_id}")
+            return
+        
+        # Initialize podcast generation
+        await db.meetings.update_one(
+            {"id": session_id},
+            {"$set": {
+                "podcast_status": "generating",
+                "podcast_generation_progress": 0,
+                "podcast_started_at": datetime.utcnow().isoformat()
+            }}
+        )
+        
+        # Start background podcast generation
+        await generate_full_podcast(session_id)
+        print(f"Auto-podcast: Successfully generated for {session_id}")
+        
+    except Exception as e:
+        print(f"Auto-podcast generation failed for {session_id}: {e}")
+        # Update meeting with error status
+        try:
+            await db.meetings.update_one(
+                {"id": session_id},
+                {"$set": {
+                    "podcast_status": "error",
+                    "podcast_error": str(e)
+                }}
+            )
+        except:
+            pass
+
 @api_router.post("/meetings/{session_id}/generate-podcast")
 async def start_podcast_generation(session_id: str):
     """Start generating podcast from completed parliamentary session"""
