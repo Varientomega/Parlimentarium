@@ -119,6 +119,11 @@ export default function MeetingRoom() {
       setIdeas(response.data.ideas);
       
       addMessage("The EGO", `✨ ${response.data.ideas.length} unique ideas have been gathered from the council. Now begins the sacred analysis...`, "system");
+      // Start analysis automatically for traditional mode
+      if (!realTimeMode) {
+        setTimeout(() => analyzeIdea(0), 2000);
+      }
+      
       setProgress(25);
       
       // Start analyzing ideas
