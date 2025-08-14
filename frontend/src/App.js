@@ -58,7 +58,7 @@ function App() {
               <span className="ml-2 text-xs bg-purple-600 px-2 py-1 rounded">DEV</span>
             )}
             {user.subscription_tier !== 'free' && (
-              <span className="ml-2 text-xs bg-gold-600 px-2 py-1 rounded uppercase">
+              <span className="ml-2 text-xs bg-yellow-600 px-2 py-1 rounded uppercase">
                 {user.subscription_tier}
               </span>
             )}
