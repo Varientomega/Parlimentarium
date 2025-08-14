@@ -287,17 +287,6 @@ export default function ParliamentariumBoard({ user }) {
       description: topicDescription,
       proposedBy: userName || "Anonymous",
       isCreationTask: isCreationTask,
-      uploadedFiles: uploadedFiles,
-      personaApiKeys: personaApiKeys,
-      audioMode: audioMode,
-      timestamp: new Date().toISOString()
-    };
-    
-    // Store in localStorage for the meeting component
-    localStorage.setItem('currentMeeting', JSON.stringify(meetingData));
-    navigate('/meeting');
-  };
-
   const handleStartMeetingWithMode = (audioMode) => {
     if (!newTopic.trim()) return;
     
