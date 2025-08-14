@@ -3491,7 +3491,55 @@ async def integrate_final_vision(session_id: str):
         except Exception as e:
             print(f"Auto-podcast generation failed: {e}")
     
+    # Save session history for paid users
+    if meeting.get('user_id'):
+        await save_session_history(session_id, meeting)
+    
     return {"message": "Final integration complete", "integration": integration}
+
+async def save_session_history(session_id: str, meeting: dict):
+    """Save session history for paid users"""
+    try:
+        user_id = meeting.get('user_id')
+        if not user_id:
+            return
+        
+        # Check if user has paid subscription
+        user_doc = await db.users.find_one({"id": user_id}, {"_id": 0})
+        if not user_doc or user_doc.get('subscription_tier') == 'free':
+            return
+        
+        # Calculate session duration (mock for now)
+        created_at = datetime.fromisoformat(meeting.get('created_at', datetime.utcnow().isoformat()))
+        duration_minutes = int((datetime.utcnow() - created_at).total_seconds() / 60)
+        
+        # Get personas used (from ideas or default list)
+        personas_used = []
+        if meeting.get('ideas'):
+            personas_used = [idea.get('persona_id') for idea in meeting['ideas'] if idea.get('persona_id')]
+        
+        if not personas_used:
+            personas_used = ["mouse", "dolphin", "patternist", "superscholar", "diviner", 
+                           "naysayer", "illustrator", "id", "ego", "superego", "contextualist"]
+        
+        # Create session history record
+        session_history = SessionHistory(
+            id=str(uuid.uuid4()),
+            user_id=user_id,
+            meeting_id=session_id,
+            topic=meeting.get('topic', ''),
+            audio_mode=meeting.get('audio_mode', 'none'),
+            duration_minutes=duration_minutes,
+            personas_used=personas_used,
+            final_report=meeting.get('final_report'),
+            created_at=created_at
+        )
+        
+        await db.session_history.insert_one(session_history.dict())
+        print(f"Session history saved for user {user_id}, session {session_id}")
+        
+    except Exception as e:
+        print(f"Failed to save session history: {e}")
 
 @api_router.post("/meetings/{session_id}/pause")
 async def pause_meeting(session_id: str, pause_request: UserPauseRequest):
