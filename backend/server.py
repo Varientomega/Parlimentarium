@@ -374,6 +374,7 @@ class CreationRequest(BaseModel):
     description: Optional[str] = None
     proposer: str = "Anonymous"
     is_creation_task: bool = True
+    persona_api_keys: Optional[Dict] = None
 
 class ImprovementLoop(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
