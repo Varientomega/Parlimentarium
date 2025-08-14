@@ -3051,9 +3051,6 @@ async def get_final_report(session_id: str):
 async def root():
     return {"message": "🏛️ The Parliamentarium Backend is Active"}
 
-# Include router
-app.include_router(api_router)
-
 @api_router.post("/test-image-generation")
 async def test_image_generation(request: dict):
     """Test image generation functionality"""
@@ -3069,6 +3066,9 @@ async def test_image_generation(request: dict):
             "error": str(e),
             "prompt": prompt
         }
+
+# Include router
+app.include_router(api_router)
 
 @api_router.get("/audio/{filename}")
 async def serve_audio(filename: str):
