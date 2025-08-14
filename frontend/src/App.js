@@ -5,6 +5,8 @@ import MeetingRoom from './components/MeetingRoom';
 import LoginPage from './components/LoginPage';
 import DevDashboard from './components/DevDashboard';
 import SubscriptionPage from './components/SubscriptionPage';
+import MarketplacePage from './components/MarketplacePage';
+import PersonaStudio from './components/PersonaStudio';
 import { Toaster } from './hooks/use-toast';
 import axios from 'axios';
 import './App.css';
@@ -14,7 +16,6 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing authentication
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
     
@@ -22,8 +23,6 @@ function App() {
       try {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
-        
-        // Set default authorization header
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       } catch (error) {
         console.error('Error parsing user data:', error);
@@ -31,14 +30,10 @@ function App() {
         localStorage.removeItem('user');
       }
     }
-    
     setIsLoading(false);
   }, []);
 
-  const handleLogin = (userData) => {
-    setUser(userData);
-  };
-
+  const handleLogin = (userData) => { setUser(userData); };
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -46,7 +41,6 @@ function App() {
     setUser(null);
   };
 
-  // Navigation component for authenticated users
   const Navigation = () => (
     <div className="fixed top-4 right-4 z-50 flex items-center gap-4">
       {user && (
@@ -54,9 +48,7 @@ function App() {
           <div className="text-white text-sm bg-gray-800/80 px-3 py-2 rounded-lg backdrop-blur-sm">
             <span className="text-gray-300">Welcome,</span>{' '}
             <span className="font-semibold">{user.email}</span>
-            {user.is_dev && (
-              <span className="ml-2 text-xs bg-purple-600 px-2 py-1 rounded">DEV</span>
-            )}
+            {user.is_dev && <span className="ml-2 text-xs bg-purple-600 px-2 py-1 rounded">DEV</span>}
             {user.subscription_tier !== 'free' && (
               <span className="ml-2 text-xs bg-yellow-600 px-2 py-1 rounded uppercase">
                 {user.subscription_tier}
@@ -65,25 +57,16 @@ function App() {
           </div>
           <div className="flex gap-2">
             {user.is_dev && (
-              <button
-                onClick={() => window.location.href = '/dev-dashboard'}
-                className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg text-sm transition-colors"
-              >
-                🛠️ Dev Dashboard
-              </button>
+              <button onClick={() => window.location.href = '/dev-dashboard'} className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg text-sm">🛠️ Dev</button>
             )}
-            <button
-              onClick={() => window.location.href = '/subscription'}
-              className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-2 rounded-lg text-sm transition-colors"
-            >
-              💎 Upgrade
-            </button>
-            <button
-              onClick={handleLogout}
-              className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm transition-colors"
-            >
-              Logout
-            </button>
+            {['gold', 'vip', 'enterprise'].includes(user.subscription_tier) && (
+              <>
+                <button onClick={() => window.location.href = '/marketplace'} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm">🛒 Market</button>
+                <button onClick={() => window.location.href = '/persona-studio'} className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm">🎭 Studio</button>
+              </>
+            )}
+            <button onClick={() => window.location.href = '/subscription'} className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-2 rounded-lg text-sm">💎 Upgrade</button>
+            <button onClick={handleLogout} className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm">Logout</button>
           </div>
         </>
       )}
@@ -106,46 +89,16 @@ function App() {
       <div className="App">
         <Navigation />
         <Routes>
-          {/* Public Routes */}
-          <Route path="/login" element={
-            user ? <Navigate to="/" replace /> : <LoginPage onLogin={handleLogin} />
-          } />
+          <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage onLogin={handleLogin} />} />
+          <Route path="/" element={user ? <ParliamentariumBoard user={user} /> : <Navigate to="/login" replace />} />
+          <Route path="/meeting" element={user ? <MeetingRoom user={user} /> : <Navigate to="/login" replace />} />
+          <Route path="/subscription" element={user ? <SubscriptionPage user={user} /> : <Navigate to="/login" replace />} />
+          <Route path="/marketplace" element={user ? <MarketplacePage user={user} /> : <Navigate to="/login" replace />} />
+          <Route path="/persona-studio" element={user ? <PersonaStudio user={user} /> : <Navigate to="/login" replace />} />
+          <Route path="/dev-dashboard" element={user && user.is_dev ? <DevDashboard user={user} /> : <Navigate to="/" replace />} />
           
-          {/* Protected Routes */}
-          <Route path="/" element={
-            user ? <ParliamentariumBoard user={user} /> : <Navigate to="/login" replace />
-          } />
-          
-          <Route path="/meeting" element={
-            user ? <MeetingRoom user={user} /> : <Navigate to="/login" replace />
-          } />
-          
-          <Route path="/subscription" element={
-            user ? <SubscriptionPage user={user} /> : <Navigate to="/login" replace />
-          } />
-          
-          {/* Dev-only Routes */}
-          <Route path="/dev-dashboard" element={
-            user && user.is_dev ? (
-              <DevDashboard user={user} />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          } />
-          
-          {/* Public routes accessible without login */}
-          <Route path="/public" element={<ParliamentariumBoard />} />
-          
-          {/* Subscription success/cancel pages */}
-          <Route path="/subscription/success" element={
-            <SubscriptionSuccess />
-          } />
-          
-          <Route path="/subscription/cancel" element={
-            <SubscriptionCancel />
-          } />
-          
-          {/* Catch all - redirect to home */}
+          <Route path="/subscription/success" element={<SubscriptionSuccess />} />
+          <Route path="/subscription/cancel" element={<SubscriptionCancel />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <Toaster />
@@ -154,10 +107,8 @@ function App() {
   );
 }
 
-// Subscription success component
 const SubscriptionSuccess = () => {
   const [status, setStatus] = useState('checking');
-  const [sessionData, setSessionData] = useState(null);
 
   useEffect(() => {
     const checkPaymentStatus = async () => {
@@ -171,18 +122,15 @@ const SubscriptionSuccess = () => {
 
       try {
         const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/subscriptions/checkout/status/${sessionId}`);
-        setSessionData(response.data);
         
         if (response.data.payment_status === 'paid') {
           setStatus('success');
-          // Refresh user data
           const userRes = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/auth/me`, {
             headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
           });
           localStorage.setItem('user', JSON.stringify(userRes.data.user));
         } else {
           setStatus('pending');
-          // Continue polling
           setTimeout(checkPaymentStatus, 2000);
         }
       } catch (error) {
@@ -210,10 +158,7 @@ const SubscriptionSuccess = () => {
             <div className="text-6xl mb-4">🎉</div>
             <h2 className="text-2xl font-bold text-green-400 mb-2">Subscription Activated!</h2>
             <p className="text-gray-300 mb-6">Welcome to your enhanced Parliamentarium experience!</p>
-            <button
-              onClick={() => window.location.href = '/'}
-              className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg"
-            >
+            <button onClick={() => window.location.href = '/'} className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg">
               Enter Parliament
             </button>
           </>
@@ -232,10 +177,7 @@ const SubscriptionSuccess = () => {
             <div className="text-4xl mb-4">❌</div>
             <h2 className="text-2xl font-bold text-red-400 mb-2">Payment Error</h2>
             <p className="text-gray-300 mb-6">There was an issue processing your payment.</p>
-            <button
-              onClick={() => window.location.href = '/subscription'}
-              className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg"
-            >
+            <button onClick={() => window.location.href = '/subscription'} className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg">
               Try Again
             </button>
           </>
@@ -245,7 +187,6 @@ const SubscriptionSuccess = () => {
   );
 };
 
-// Subscription cancel component
 const SubscriptionCancel = () => (
   <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-black flex items-center justify-center">
     <div className="text-center max-w-md mx-auto p-6">
@@ -253,16 +194,10 @@ const SubscriptionCancel = () => (
       <h2 className="text-2xl font-bold text-yellow-400 mb-2">Subscription Cancelled</h2>
       <p className="text-gray-300 mb-6">No worries! You can upgrade anytime to unlock advanced features.</p>
       <div className="flex gap-4 justify-center">
-        <button
-          onClick={() => window.location.href = '/subscription'}
-          className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg"
-        >
+        <button onClick={() => window.location.href = '/subscription'} className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg">
           View Plans
         </button>
-        <button
-          onClick={() => window.location.href = '/'}
-          className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg"
-        >
+        <button onClick={() => window.location.href = '/'} className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg">
           Continue Free
         </button>
       </div>
