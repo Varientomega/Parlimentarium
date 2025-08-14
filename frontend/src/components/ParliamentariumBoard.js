@@ -475,13 +475,71 @@ export default function ParliamentariumBoard() {
               )}
             </div>
 
-            <Button 
-              onClick={handleStartMeeting}
-              disabled={!newTopic.trim()}
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-            >
-              {isCreationTask ? '🎨 Start Creation Parliament' : '🔮 Convene the Parliament'}
-            </Button>
+            {/* Submit Button */}
+            <div className="flex justify-center pt-6 border-t border-gray-700">
+              <Button 
+                onClick={handleStartMeeting}
+                disabled={!newTopic.trim()}
+                className="bg-gradient-to-r from-purple-600 to-gold-600 hover:from-purple-700 hover:to-gold-700 text-white font-bold py-3 px-8 rounded-lg text-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+              >
+                🏛️ Convene the Parliament
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Audio Mode Selection */}
+      <Card className="bg-gray-800/50 border-cyan-500/30 mb-6">
+        <CardHeader>
+          <CardTitle>🎵 Choose Conversation Mode</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Streaming Audio Mode */}
+            <div className="group relative">
+              <Button
+                onClick={() => handleStartMeetingWithMode('streaming')}
+                disabled={!newTopic.trim()}
+                className="w-full h-16 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 flex flex-col items-center justify-center"
+              >
+                🎵 Stream
+              </Button>
+              {/* Hover Tooltip */}
+              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                Real-time audio streaming with individual speaker control and influence weights
+              </div>
+            </div>
+
+            {/* No Audio Mode */}
+            <div className="group relative">
+              <Button
+                onClick={() => handleStartMeetingWithMode('none')}
+                disabled={!newTopic.trim()}
+                className="w-full h-16 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 flex flex-col items-center justify-center"
+              >
+                💬 Text Only
+              </Button>
+              {/* Hover Tooltip */}
+              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                Traditional text-based discussion without audio features
+              </div>
+            </div>
+
+            {/* Podcast Mode */}
+            <div className="group relative">
+              <Button
+                onClick={() => handleStartMeetingWithMode('podcast')}
+                disabled={!newTopic.trim()}
+                className="w-full h-16 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 flex flex-col items-center justify-center"
+              >
+                🎙️ Podcast
+              </Button>
+              {/* Hover Tooltip */}
+              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                Generate complete podcast automatically - ready when conversation finishes
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
