@@ -3054,6 +3054,22 @@ async def root():
 # Include router
 app.include_router(api_router)
 
+@api_router.post("/test-image-generation")
+async def test_image_generation(request: dict):
+    """Test image generation functionality"""
+    prompt = request.get('prompt', 'A beautiful parliamentary chamber with AI entities')
+    style = request.get('style', 'artistic')
+    
+    try:
+        result = await generate_image(prompt, style)
+        return result
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "prompt": prompt
+        }
+
 @api_router.get("/audio/{filename}")
 async def serve_audio(filename: str):
     """Serve generated audio files"""
