@@ -124,10 +124,33 @@ class APIKeyManager:
 
 api_key_manager = APIKeyManager()
 
-# MongoDB connection
+# Initialize database and SaaS services
 mongo_url = os.environ['MONGO_URL']
+db_name = os.environ['DB_NAME']
 client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+db = client[db_name]
+
+# Initialize SaaS platform services
+auth_service = AuthService(db)
+subscription_service = SubscriptionService(db)
+dev_dashboard_service = DevDashboardService(db)
+
+# Security
+security = HTTPBearer()
+
+# Helper function to get current user
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> User:
+    return await auth_service.get_current_user(credentials)
+
+# Helper function to require subscription tier
+def require_subscription(min_tier: SubscriptionTier):
+    return auth_service.require_subscription(min_tier)
+
+# Helper function to require dev access
+async def require_dev_access(current_user: User = Depends(get_current_user)) -> User:
+    if not current_user.is_dev:
+        raise HTTPException(status_code=403, detail="Dev access required")
+    return current_user
 
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
