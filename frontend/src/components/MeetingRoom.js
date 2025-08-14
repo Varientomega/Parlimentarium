@@ -58,21 +58,32 @@ export default function MeetingRoom() {
     }
   }, [navigate]);
 
-  const createMeeting = async (topicData) => {
+  const createMeeting = async (topicData, selectedAudioMode = 'none') => {
     try {
       setIsProcessing(true);
       setCurrentPhase('creating');
+      setAudioMode(selectedAudioMode);
       
       const response = await axios.post(`${API}/meetings`, {
         topic: topicData.topic,
         description: topicData.description,
         proposer: topicData.proposedBy,
         is_creation_task: topicData.isCreationTask || false,
-        persona_api_keys: topicData.personaApiKeys
+        persona_api_keys: topicData.personaApiKeys,
+        audio_mode: selectedAudioMode
       });
       
       setMeetingId(response.data.id);
-      addMessage("System", "🏛️ The Parliamentarium is now in session. Initializing sacred discourse...", "system");
+      
+      // Show different messages based on audio mode
+      if (selectedAudioMode === 'streaming') {
+        addMessage("System", "🏛️🎵 The Parliamentarium is now in session with real-time audio streaming...", "system");
+        setIsStreamingAudio(true);
+      } else if (selectedAudioMode === 'podcast') {
+        addMessage("System", "🏛️🎙️ The Parliamentarium is now in session. Podcast will be ready when conversation finishes...", "system");
+      } else {
+        addMessage("System", "🏛️ The Parliamentarium is now in session. Initializing sacred discourse...", "system");
+      }
       
       // Show persona API key configuration if provided
       if (topicData.personaApiKeys) {
