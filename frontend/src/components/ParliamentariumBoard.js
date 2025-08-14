@@ -188,7 +188,48 @@ export default function ParliamentariumBoard() {
   const [isCreationTask, setIsCreationTask] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [showAdvancedConfig, setShowAdvancedConfig] = useState(false);
+  const [personaApiKeys, setPersonaApiKeys] = useState({});
   const navigate = useNavigate();
+
+  // Available API key options
+  const availableKeys = [
+    { id: 'gemini_1', name: 'Gemini Key 1', description: 'Primary Gemini API Key' },
+    { id: 'gemini_2', name: 'Gemini Key 2', description: 'Secondary Gemini API Key' },
+    { id: 'gemini_3', name: 'Gemini Key 3', description: 'Tertiary Gemini API Key' },
+    { id: 'gemini_4', name: 'Gemini Key 4', description: 'Quaternary Gemini API Key' },
+    { id: 'gemini_5', name: 'Gemini Key 5', description: 'Quintenary Gemini API Key' }
+  ];
+
+  // Default persona key assignments with fallback order
+  const defaultKeyAssignments = {
+    "mouse": { primary: 'gemini_1', fallback: ['gemini_2', 'gemini_3', 'gemini_4', 'gemini_5'] },
+    "dolphin": { primary: 'gemini_2', fallback: ['gemini_1', 'gemini_3', 'gemini_4', 'gemini_5'] },
+    "patternist": { primary: 'gemini_3', fallback: ['gemini_1', 'gemini_2', 'gemini_4', 'gemini_5'] },
+    "contextualist": { primary: 'gemini_4', fallback: ['gemini_1', 'gemini_2', 'gemini_3', 'gemini_5'] },
+    "superscholar": { primary: 'gemini_5', fallback: ['gemini_1', 'gemini_2', 'gemini_3', 'gemini_4'] },
+    "diviner": { primary: 'gemini_1', fallback: ['gemini_2', 'gemini_3', 'gemini_4', 'gemini_5'] },
+    "naysayer": { primary: 'gemini_2', fallback: ['gemini_1', 'gemini_3', 'gemini_4', 'gemini_5'] },
+    "illustrator": { primary: 'gemini_3', fallback: ['gemini_1', 'gemini_2', 'gemini_4', 'gemini_5'] },
+    "id": { primary: 'gemini_4', fallback: ['gemini_1', 'gemini_2', 'gemini_3', 'gemini_5'] },
+    "ego": { primary: 'gemini_5', fallback: ['gemini_1', 'gemini_2', 'gemini_3', 'gemini_4'] },
+    "superego": { primary: 'gemini_1', fallback: ['gemini_2', 'gemini_3', 'gemini_4', 'gemini_5'] }
+  };
+
+  useEffect(() => {
+    // Initialize with default assignments
+    setPersonaApiKeys(defaultKeyAssignments);
+  }, []);
+
+  const updatePersonaKey = (personaId, keyId) => {
+    setPersonaApiKeys(prev => ({
+      ...prev,
+      [personaId]: {
+        ...prev[personaId],
+        primary: keyId
+      }
+    }));
+  };
 
   const handleFileUpload = (event) => {
     const files = Array.from(event.target.files);
