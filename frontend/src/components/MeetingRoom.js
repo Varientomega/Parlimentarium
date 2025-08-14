@@ -859,12 +859,18 @@ export default function MeetingRoom() {
                     </div>
                   </div>
                   
-                  <div className="flex gap-3">
+                  <div className="flex gap-3 flex-wrap">
+                    <Button
+                      onClick={streamPodcast}
+                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    >
+                      🎵 Stream Now
+                    </Button>
                     <Button
                       onClick={downloadPodcast}
                       className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
                     >
-                      📥 Download Podcast (MP3)
+                      📥 Download MP3
                     </Button>
                     <Button
                       variant="outline"
@@ -876,6 +882,14 @@ export default function MeetingRoom() {
                     >
                       📋 Show Segments
                     </Button>
+                    {currentAudio && (
+                      <Button
+                        onClick={stopAudio}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        ⏹️ Stop Audio
+                      </Button>
+                    )}
                   </div>
                 </div>
               )}
