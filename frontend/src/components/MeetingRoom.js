@@ -675,7 +675,40 @@ export default function MeetingRoom() {
                       {new Date(message.timestamp).toLocaleTimeString()}
                     </span>
                   </div>
-                  <p className="text-gray-100">{message.content}</p>
+                  <div className="text-gray-100">
+                    {/* Parse and display content with images */}
+                    {message.content.split('\n').map((line, lineIndex) => {
+                      // Check if line contains an image URL
+                      if (line.includes('🎨 **Generated Illustration**:')) {
+                        const imageUrl = line.split('🎨 **Generated Illustration**: ')[1];
+                        return (
+                          <div key={lineIndex} className="my-3">
+                            <div className="text-purple-300 font-semibold mb-2">🎨 Generated Illustration:</div>
+                            <img 
+                              src={imageUrl} 
+                              alt="Generated illustration" 
+                              className="max-w-full h-auto rounded-lg border border-purple-500/30 shadow-lg"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'block';
+                              }}
+                            />
+                            <div style={{display: 'none'}} className="text-red-400 text-sm">
+                              [Image failed to load]
+                            </div>
+                          </div>
+                        );
+                      } else if (line.includes('*Image prompt:')) {
+                        return (
+                          <div key={lineIndex} className="text-xs text-gray-400 italic mt-1">
+                            {line}
+                          </div>
+                        );
+                      } else {
+                        return <div key={lineIndex}>{line}</div>;
+                      }
+                    })}
+                  </div>
                 </div>
               ))}
               <div ref={messagesEndRef} />
