@@ -422,6 +422,7 @@ class CreationRequest(BaseModel):
     proposer: str = "Anonymous"
     is_creation_task: bool = True
     persona_api_keys: Optional[Dict] = None
+    audio_mode: Optional[str] = "none"
 
 class ImprovementLoop(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
