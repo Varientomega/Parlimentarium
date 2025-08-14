@@ -203,8 +203,8 @@ export default function MeetingRoom() {
       
       let response;
       
-      // Use weighted analysis if in real-time mode with speaker weights
-      if (realTimeMode && Object.keys(speakerWeights).length > 0) {
+      // Use weighted analysis if in streaming mode with speaker weights
+      if (audioMode === 'streaming' && Object.keys(speakerWeights).length > 0) {
         response = await axios.post(`${API}/meetings/${meetingId}/analyze-idea-weighted/${ideaIndex}`, {
           speaker_weights: speakerWeights
         });
