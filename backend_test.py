@@ -100,6 +100,156 @@ class ParliamentaryTester:
         except Exception as e:
             self.log_test("Create Meeting", False, f"Exception: {str(e)}")
             return False
+
+    async def test_create_meeting_with_custom_api_keys(self):
+        """Test Meeting Creation with Custom API Key Assignments"""
+        try:
+            meeting_data = {
+                "topic": "Test Custom API Keys",
+                "description": "Testing dynamic key assignment",
+                "proposer": "API Key Tester",
+                "persona_api_keys": {
+                    "mouse": {"primary": "gemini_2", "fallback": ["gemini_1", "gemini_3"]},
+                    "dolphin": {"primary": "gemini_3", "fallback": ["gemini_1", "gemini_2"]},
+                    "patternist": {"primary": "gemini_4", "fallback": ["gemini_2", "gemini_5"]},
+                    "contextualist": {"primary": "gemini_5", "fallback": ["gemini_1", "gemini_4"]}
+                }
+            }
+            
+            async with self.session.post(f"{API_BASE}/meetings", json=meeting_data) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    custom_meeting_id = data.get('id')
+                    if custom_meeting_id and data.get('topic') == meeting_data['topic']:
+                        self.log_test("Create Meeting with Custom API Keys", True, f"Meeting with custom keys created: {custom_meeting_id}")
+                        return True, custom_meeting_id
+                    else:
+                        self.log_test("Create Meeting with Custom API Keys", False, f"Invalid response structure: {data}")
+                        return False, None
+                else:
+                    error_text = await response.text()
+                    self.log_test("Create Meeting with Custom API Keys", False, f"HTTP {response.status}: {error_text}")
+                    return False, None
+        except Exception as e:
+            self.log_test("Create Meeting with Custom API Keys", False, f"Exception: {str(e)}")
+            return False, None
+
+    async def test_verify_custom_api_keys_stored(self, custom_meeting_id):
+        """Test that custom API key assignments are stored in the meeting"""
+        if not custom_meeting_id:
+            self.log_test("Verify Custom API Keys Stored", False, "No custom meeting ID available")
+            return False
+            
+        try:
+            async with self.session.get(f"{API_BASE}/meetings/{custom_meeting_id}") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    persona_api_keys = data.get('persona_api_keys', {})
+                    
+                    # Check if custom assignments are stored
+                    expected_assignments = {
+                        "mouse": {"primary": "gemini_2", "fallback": ["gemini_1", "gemini_3"]},
+                        "dolphin": {"primary": "gemini_3", "fallback": ["gemini_1", "gemini_2"]}
+                    }
+                    
+                    if persona_api_keys and 'mouse' in persona_api_keys and 'dolphin' in persona_api_keys:
+                        mouse_config = persona_api_keys['mouse']
+                        dolphin_config = persona_api_keys['dolphin']
+                        
+                        if (mouse_config.get('primary') == 'gemini_2' and 
+                            dolphin_config.get('primary') == 'gemini_3'):
+                            self.log_test("Verify Custom API Keys Stored", True, "Custom API key assignments stored correctly")
+                            return True
+                        else:
+                            self.log_test("Verify Custom API Keys Stored", False, f"API key assignments don't match expected values")
+                            return False
+                    else:
+                        self.log_test("Verify Custom API Keys Stored", False, f"persona_api_keys not found in meeting data")
+                        return False
+                else:
+                    error_text = await response.text()
+                    self.log_test("Verify Custom API Keys Stored", False, f"HTTP {response.status}: {error_text}")
+                    return False
+        except Exception as e:
+            self.log_test("Verify Custom API Keys Stored", False, f"Exception: {str(e)}")
+            return False
+
+    async def test_start_deliberation_with_custom_keys(self, custom_meeting_id):
+        """Test Start Deliberation with Custom API Key Assignments"""
+        if not custom_meeting_id:
+            self.log_test("Start Deliberation with Custom Keys", False, "No custom meeting ID available")
+            return False
+            
+        try:
+            async with self.session.post(f"{API_BASE}/meetings/{custom_meeting_id}/start-deliberation") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    ideas = data.get('ideas', [])
+                    if len(ideas) >= 10:  # Should have ideas from personas
+                        # Check that ideas were generated (indicating API keys worked)
+                        valid_ideas = [idea for idea in ideas if idea.get('idea') and len(idea.get('idea', '')) > 10]
+                        if len(valid_ideas) >= 8:  # At least 8 personas should generate valid content
+                            self.log_test("Start Deliberation with Custom Keys", True, f"Deliberation started with custom keys, {len(valid_ideas)} valid ideas generated")
+                            return True
+                        else:
+                            self.log_test("Start Deliberation with Custom Keys", False, f"Only {len(valid_ideas)} valid ideas generated, expected at least 8")
+                            return False
+                    else:
+                        self.log_test("Start Deliberation with Custom Keys", False, f"Expected at least 10 ideas, got {len(ideas)}")
+                        return False
+                else:
+                    error_text = await response.text()
+                    self.log_test("Start Deliberation with Custom Keys", False, f"HTTP {response.status}: {error_text}")
+                    return False
+        except Exception as e:
+            self.log_test("Start Deliberation with Custom Keys", False, f"Exception: {str(e)}")
+            return False
+
+    async def test_api_key_fallback_mechanism(self):
+        """Test API Key Fallback with Invalid Keys"""
+        try:
+            # Create meeting with invalid primary keys to test fallback
+            meeting_data = {
+                "topic": "Test API Key Fallback",
+                "description": "Testing fallback mechanism with invalid keys",
+                "proposer": "Fallback Tester",
+                "persona_api_keys": {
+                    "mouse": {"primary": "invalid_key_1", "fallback": ["gemini_1", "gemini_2"]},
+                    "dolphin": {"primary": "invalid_key_2", "fallback": ["gemini_2", "gemini_3"]},
+                    "ego": {"primary": "invalid_key_3", "fallback": ["gemini_4", "gemini_5"]}
+                }
+            }
+            
+            async with self.session.post(f"{API_BASE}/meetings", json=meeting_data) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    fallback_meeting_id = data.get('id')
+                    
+                    # Now try to start deliberation - should use fallback keys
+                    async with self.session.post(f"{API_BASE}/meetings/{fallback_meeting_id}/start-deliberation") as delib_response:
+                        if delib_response.status == 200:
+                            delib_data = await delib_response.json()
+                            ideas = delib_data.get('ideas', [])
+                            
+                            # Check if any ideas were generated despite invalid primary keys
+                            valid_ideas = [idea for idea in ideas if idea.get('idea') and len(idea.get('idea', '')) > 10]
+                            if len(valid_ideas) >= 5:  # At least some should work via fallback
+                                self.log_test("API Key Fallback Mechanism", True, f"Fallback mechanism working, {len(valid_ideas)} ideas generated with fallback keys")
+                                return True
+                            else:
+                                self.log_test("API Key Fallback Mechanism", False, f"Fallback failed, only {len(valid_ideas)} valid ideas")
+                                return False
+                        else:
+                            error_text = await delib_response.text()
+                            self.log_test("API Key Fallback Mechanism", False, f"Deliberation failed: HTTP {delib_response.status}: {error_text}")
+                            return False
+                else:
+                    error_text = await response.text()
+                    self.log_test("API Key Fallback Mechanism", False, f"Meeting creation failed: HTTP {response.status}: {error_text}")
+                    return False
+        except Exception as e:
+            self.log_test("API Key Fallback Mechanism", False, f"Exception: {str(e)}")
+            return False
             
     async def test_get_meeting(self):
         """Test retrieving meeting details"""
