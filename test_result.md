@@ -297,8 +297,46 @@ test_plan:
       - working: false
         agent: "testing"
         comment: "OpenRouter API authentication failing with 401 'User not found' error. API key appears to be invalid or account has issues. System handles this gracefully with fallback responses, but OpenRouter-dependent personas cannot generate authentic content."
+  - task: "Dynamic API Key Selection Frontend"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/components/ParliamentariumBoard.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Added dropdown menus to each persona card for API key selection. Includes Gemini keys 1-5 and emergent LLM key option. Shows fallback order and persists selections for meeting creation."
+
+  - task: "Robust Backend Error Handling"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Implemented APIKeyManager class with ordered fallback system. Automatic key rotation on failures, quota limit detection, authentication error handling, and circuit breaker patterns. Each persona can have custom primary + fallback key assignments."
+
+  - task: "Meeting-Specific Persona Configuration"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Updated meeting creation to accept and store persona API key assignments. Added get_meeting_personas() function and updated get_all_persona_ideas() to use meeting-specific configurations. Personas now use dynamically assigned keys per meeting."
+
 agent_communication:
   - agent: "testing"
     message: "Completed comprehensive backend testing. Fixed critical MongoDB ObjectId serialization issue. All API endpoints working correctly. LLM API authentication needs attention but system architecture is sound."
   - agent: "testing"
     message: "PERSONA FUNCTIONALITY DETAILED ANALYSIS COMPLETE: All 11 personas are responding and generating unique content. Gemini API integration is working perfectly (5/5 keys functional). OpenRouter API has authentication issues (401 User not found). Some personas show strong personality expression while others hit quota limits. System handles API failures gracefully with fallback responses. Core persona architecture is sound."
+  - agent: "main"
+    message: "PHASE 1-3 IMPLEMENTATION COMPLETE: Added dynamic API key selection dropdowns to frontend personas, implemented robust backend error handling with APIKeyManager and ordered fallbacks, and updated meeting system to support per-meeting persona API key configurations. Ready for backend testing of new fallback mechanisms and key rotation system."
