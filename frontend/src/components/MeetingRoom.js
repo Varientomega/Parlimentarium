@@ -220,7 +220,7 @@ export default function MeetingRoom() {
       if (ideaIndex < ideas.length - 1) {
         setTimeout(() => analyzeIdea(ideaIndex + 1), 2000);
       } else {
-        setTimeout(() => finalizeDecision(), 2000);
+        setTimeout(() => finalizeMeeting(meetingId), 2000);
       }
       
     } catch (error) {
