@@ -269,29 +269,94 @@ export default function MeetingRoom() {
     }, 2000); // Poll every 2 seconds
   };
 
-  const downloadPodcast = async () => {
-    if (!meetingId) return;
+  const startNewMeetingFromWinner = () => {
+    if (!finalReport?.winning_idea) return;
+    
+    const newMeetingData = {
+      topic: `Follow-up: ${finalReport.winning_idea.idea}`,
+      description: `Previous winning idea: "${finalReport.winning_idea.idea}"\n\nFollow-up questions from last session:\n${finalReport.follow_up_questions}`,
+      proposedBy: "Parliament Continuation",
+      isCreationTask: false,
+      uploadedFiles: [],
+      timestamp: new Date().toISOString()
+    };
+    
+    localStorage.setItem('currentMeeting', JSON.stringify(newMeetingData));
+    navigate('/');
+  };
+
+  const toggleRealTimeMode = () => {
+    setRealTimeMode(!realTimeMode);
+    if (!realTimeMode) {
+      // Initialize conversation queue with personas
+      const personas = [
+        "mouse", "dolphin", "patternist", "superscholar", "diviner", 
+        "naysayer", "illustrator", "id", "ego", "superego", "contextualist"
+      ];
+      setConversationQueue(personas);
+      setCurrentSpeaker(0);
+      // Initialize weights to 0
+      const initialWeights = {};
+      personas.forEach(persona => {
+        initialWeights[persona] = 0;
+      });
+      setSpeakerWeights(initialWeights);
+    }
+  };
+
+  const updateSpeakerWeight = (personaId, weight) => {
+    setSpeakerWeights(prev => ({
+      ...prev,
+      [personaId]: weight
+    }));
+  };
+
+  const nextSpeaker = () => {
+    if (currentSpeaker < conversationQueue.length - 1) {
+      setCurrentSpeaker(currentSpeaker + 1);
+    } else {
+      setCurrentSpeaker(0); // Loop back to first speaker
+    }
+    setIsPlaying(false);
+  };
+
+  const playCurrentSpeaker = async () => {
+    if (!conversationQueue[currentSpeaker]) return;
+    
+    setIsPlaying(true);
+    const personaId = conversationQueue[currentSpeaker];
     
     try {
-      const response = await axios.get(`${API}/meetings/${meetingId}/download-podcast`, {
-        responseType: 'blob'
+      // Generate speech for current speaker with weight influence
+      const response = await axios.post(`${API}/meetings/${meetingId}/generate-speaker-audio`, {
+        persona_id: personaId,
+        weight: speakerWeights[personaId] || 0,
+        context: meetingData?.topic || "Current discussion"
       });
       
-      // Create download link
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `parliamentarium_podcast_${meetingId}.mp3`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-      
-      addMessage("System", "📥 Podcast download started!", "system");
+      if (response.data.audio_url) {
+        // Play audio
+        const audio = new Audio(response.data.audio_url);
+        setCurrentAudio(audio);
+        audio.play();
+        audio.onended = () => {
+          setIsPlaying(false);
+          setCurrentAudio(null);
+        };
+      }
     } catch (error) {
-      console.error('Error downloading podcast:', error);
-      addMessage("System", "❌ Failed to download podcast.", "error");
+      console.error('Error playing speaker audio:', error);
+      setIsPlaying(false);
     }
+  };
+
+  const stopAudio = () => {
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+      setCurrentAudio(null);
+    }
+    setIsPlaying(false);
   };
 
   useEffect(() => {
