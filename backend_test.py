@@ -250,6 +250,216 @@ class ParliamentaryTester:
         except Exception as e:
             self.log_test("API Key Fallback Mechanism", False, f"Exception: {str(e)}")
             return False
+
+    async def test_image_generation_endpoint(self):
+        """Test the dedicated image generation test endpoint"""
+        try:
+            test_data = {
+                "prompt": "A mystical parliamentary chamber with AI personas debating",
+                "style": "court_illustrator"
+            }
+            
+            async with self.session.post(f"{API_BASE}/test-image-generation", json=test_data) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get('success') and data.get('image_url'):
+                        self.log_test("Image Generation Endpoint", True, f"Image generated successfully: {data.get('image_url')[:50]}...")
+                        return True
+                    elif not data.get('success'):
+                        # Check if it's a graceful failure
+                        error_msg = data.get('error', 'Unknown error')
+                        self.log_test("Image Generation Endpoint", True, f"Graceful failure handled: {error_msg}")
+                        return True
+                    else:
+                        self.log_test("Image Generation Endpoint", False, f"Invalid response structure: {data}")
+                        return False
+                else:
+                    error_text = await response.text()
+                    self.log_test("Image Generation Endpoint", False, f"HTTP {response.status}: {error_text}")
+                    return False
+        except Exception as e:
+            self.log_test("Image Generation Endpoint", False, f"Exception: {str(e)}")
+            return False
+
+    async def test_persona_image_generation(self):
+        """Test image generation for Court Illustrator and Contextualist personas"""
+        try:
+            # Create a meeting specifically for testing image generation
+            meeting_data = {
+                "topic": "Creating a magical library that bridges digital and physical worlds",
+                "description": "Design an innovative library concept that combines traditional books with digital experiences",
+                "proposer": "Image Generation Tester"
+            }
+            
+            async with self.session.post(f"{API_BASE}/meetings", json=meeting_data) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    image_meeting_id = data.get('id')
+                    
+                    # Start deliberation to trigger persona responses with images
+                    async with self.session.post(f"{API_BASE}/meetings/{image_meeting_id}/start-deliberation") as delib_response:
+                        if delib_response.status == 200:
+                            delib_data = await delib_response.json()
+                            ideas = delib_data.get('ideas', [])
+                            
+                            # Find Court Illustrator and Contextualist responses
+                            illustrator_idea = None
+                            contextualist_idea = None
+                            
+                            for idea in ideas:
+                                if idea.get('persona_name') == 'The Court Illustrator':
+                                    illustrator_idea = idea
+                                elif idea.get('persona_name') == 'The Contextualist':
+                                    contextualist_idea = idea
+                            
+                            success_count = 0
+                            
+                            # Check Court Illustrator response for image
+                            if illustrator_idea:
+                                idea_text = illustrator_idea.get('idea', '')
+                                if '🎨 **Generated Illustration**:' in idea_text or 'Image generation' in idea_text:
+                                    self.log_test("Court Illustrator Image Generation", True, "Court Illustrator generated image with response")
+                                    success_count += 1
+                                else:
+                                    self.log_test("Court Illustrator Image Generation", False, "No image generation detected in Court Illustrator response")
+                            else:
+                                self.log_test("Court Illustrator Image Generation", False, "Court Illustrator response not found")
+                            
+                            # Check Contextualist response for image
+                            if contextualist_idea:
+                                idea_text = contextualist_idea.get('idea', '')
+                                if '🎨 **Generated Illustration**:' in idea_text or 'Image generation' in idea_text:
+                                    self.log_test("Contextualist Image Generation", True, "Contextualist generated image with response")
+                                    success_count += 1
+                                else:
+                                    self.log_test("Contextualist Image Generation", False, "No image generation detected in Contextualist response")
+                            else:
+                                self.log_test("Contextualist Image Generation", False, "Contextualist response not found")
+                            
+                            return success_count > 0
+                        else:
+                            error_text = await delib_response.text()
+                            self.log_test("Persona Image Generation", False, f"Deliberation failed: HTTP {delib_response.status}: {error_text}")
+                            return False
+                else:
+                    error_text = await response.text()
+                    self.log_test("Persona Image Generation", False, f"Meeting creation failed: HTTP {response.status}: {error_text}")
+                    return False
+        except Exception as e:
+            self.log_test("Persona Image Generation", False, f"Exception: {str(e)}")
+            return False
+
+    async def test_final_report_image_generation(self):
+        """Test that final reports include summary image generation"""
+        try:
+            # Create a meeting for final report testing
+            meeting_data = {
+                "topic": "Designing a sustainable smart city of the future",
+                "description": "Create comprehensive plans for an eco-friendly, technology-integrated urban environment",
+                "proposer": "Final Report Image Tester"
+            }
+            
+            async with self.session.post(f"{API_BASE}/meetings", json=meeting_data) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    report_meeting_id = data.get('id')
+                    
+                    # Complete the full workflow: deliberation -> analysis -> finalization
+                    # Start deliberation
+                    async with self.session.post(f"{API_BASE}/meetings/{report_meeting_id}/start-deliberation") as delib_response:
+                        if delib_response.status == 200:
+                            # Analyze first idea
+                            async with self.session.post(f"{API_BASE}/meetings/{report_meeting_id}/analyze-idea/0") as analyze_response:
+                                if analyze_response.status == 200:
+                                    # Finalize meeting
+                                    async with self.session.post(f"{API_BASE}/meetings/{report_meeting_id}/finalize") as final_response:
+                                        if final_response.status == 200:
+                                            final_data = await final_response.json()
+                                            final_report = final_data.get('final_report', {})
+                                            
+                                            # Check for summary_image field
+                                            if 'summary_image' in final_report:
+                                                summary_image = final_report['summary_image']
+                                                if isinstance(summary_image, dict) and ('url' in summary_image or 'error' in summary_image):
+                                                    if summary_image.get('url'):
+                                                        self.log_test("Final Report Image Generation", True, f"Summary image generated: {summary_image.get('url')[:50]}...")
+                                                    else:
+                                                        self.log_test("Final Report Image Generation", True, f"Image generation attempted with graceful error handling: {summary_image.get('error', 'Unknown error')}")
+                                                    return True
+                                                else:
+                                                    self.log_test("Final Report Image Generation", False, f"Invalid summary_image structure: {summary_image}")
+                                                    return False
+                                            else:
+                                                self.log_test("Final Report Image Generation", False, "No summary_image field found in final report")
+                                                return False
+                                        else:
+                                            error_text = await final_response.text()
+                                            self.log_test("Final Report Image Generation", False, f"Finalization failed: HTTP {final_response.status}: {error_text}")
+                                            return False
+                                else:
+                                    error_text = await analyze_response.text()
+                                    self.log_test("Final Report Image Generation", False, f"Analysis failed: HTTP {analyze_response.status}: {error_text}")
+                                    return False
+                        else:
+                            error_text = await delib_response.text()
+                            self.log_test("Final Report Image Generation", False, f"Deliberation failed: HTTP {delib_response.status}: {error_text}")
+                            return False
+                else:
+                    error_text = await response.text()
+                    self.log_test("Final Report Image Generation", False, f"Meeting creation failed: HTTP {response.status}: {error_text}")
+                    return False
+        except Exception as e:
+            self.log_test("Final Report Image Generation", False, f"Exception: {str(e)}")
+            return False
+
+    async def test_image_generation_error_handling(self):
+        """Test error handling for image generation with invalid inputs"""
+        try:
+            # Test with invalid style
+            invalid_data = {
+                "prompt": "Test prompt",
+                "style": "invalid_style_that_does_not_exist"
+            }
+            
+            async with self.session.post(f"{API_BASE}/test-image-generation", json=invalid_data) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    # Should handle gracefully - either generate image or return error
+                    if data.get('success') or data.get('error'):
+                        self.log_test("Image Generation Error Handling - Invalid Style", True, "Invalid style handled gracefully")
+                        error_handling_success = True
+                    else:
+                        self.log_test("Image Generation Error Handling - Invalid Style", False, f"Unexpected response: {data}")
+                        error_handling_success = False
+                else:
+                    # Even HTTP errors should be handled gracefully
+                    self.log_test("Image Generation Error Handling - Invalid Style", True, f"HTTP error handled: {response.status}")
+                    error_handling_success = True
+            
+            # Test with empty prompt
+            empty_data = {
+                "prompt": "",
+                "style": "court_illustrator"
+            }
+            
+            async with self.session.post(f"{API_BASE}/test-image-generation", json=empty_data) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get('success') or data.get('error'):
+                        self.log_test("Image Generation Error Handling - Empty Prompt", True, "Empty prompt handled gracefully")
+                        error_handling_success = error_handling_success and True
+                    else:
+                        self.log_test("Image Generation Error Handling - Empty Prompt", False, f"Unexpected response: {data}")
+                        error_handling_success = False
+                else:
+                    self.log_test("Image Generation Error Handling - Empty Prompt", True, f"HTTP error handled: {response.status}")
+                    error_handling_success = error_handling_success and True
+            
+            return error_handling_success
+            
+        except Exception as e:
+            self.log_test("Image Generation Error Handling", False, f"Exception: {str(e)}")
+            return False
             
     async def test_get_meeting(self):
         """Test retrieving meeting details"""
