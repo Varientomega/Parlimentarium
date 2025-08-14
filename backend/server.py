@@ -2161,8 +2161,352 @@ async def generate_final_report(winner_idea: Dict, all_ideas: List[Dict], topic:
     
     return report
 
-# API Endpoints
-@api_router.post("/meetings", response_model=MeetingSession)
+# ============================================================================
+# SAAS PLATFORM ENDPOINTS
+# ============================================================================
+
+# Authentication Endpoints
+@api_router.post("/auth/login")
+async def login(request: LoginRequest):
+    """Login or register user with automatic dev status assignment for first 5 users"""
+    try:
+        user = await auth_service.authenticate_user(request.email)
+        if not user:
+            raise HTTPException(status_code=401, detail="Authentication failed")
+        
+        # Create JWT token
+        token_data = {"sub": user.email, "user_id": user.id}
+        access_token = auth_service.create_access_token(token_data)
+        
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": user.dict(),
+            "message": "Dev access granted!" if user.is_dev and user.dev_granted_at else "Welcome!"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/auth/me")
+async def get_current_user_info(current_user: User = Depends(get_current_user)):
+    """Get current user information"""
+    return {
+        "user": current_user.dict(),
+        "features": subscription_service.get_user_features(current_user.subscription_tier)
+    }
+
+# Subscription Endpoints
+@api_router.get("/subscriptions/plans")
+async def get_subscription_plans():
+    """Get available subscription plans"""
+    return {
+        "plans": [plan.dict() for plan in subscription_service.subscription_plans.values()]
+    }
+
+@api_router.post("/subscriptions/checkout")
+async def create_subscription_checkout(
+    request: SubscriptionRequest, 
+    http_request: Request,
+    current_user: User = Depends(get_current_user)
+):
+    """Create Stripe checkout session for subscription"""
+    try:
+        host_url = str(http_request.base_url)
+        session = await subscription_service.create_subscription_checkout(
+            current_user.id, request.tier, request.origin_url, host_url
+        )
+        return {"checkout_url": session.url, "session_id": session.session_id}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api_router.get("/subscriptions/checkout/status/{session_id}")
+async def get_checkout_status(session_id: str, http_request: Request):
+    """Get subscription checkout status"""
+    try:
+        host_url = str(http_request.base_url)
+        stripe_checkout = subscription_service.get_stripe_checkout(host_url)
+        
+        status = await stripe_checkout.get_checkout_status(session_id)
+        
+        # If payment is completed, process the subscription
+        if status.payment_status == "paid":
+            await subscription_service.process_successful_payment(session_id)
+        
+        return status
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Webhook endpoint for Stripe
+@api_router.post("/webhook/stripe")
+async def stripe_webhook(request: Request):
+    """Handle Stripe webhooks"""
+    try:
+        body = await request.body()
+        stripe_signature = request.headers.get("Stripe-Signature")
+        
+        host_url = str(request.base_url)
+        stripe_checkout = subscription_service.get_stripe_checkout(host_url)
+        
+        webhook_response = await stripe_checkout.handle_webhook(body, stripe_signature)
+        
+        # Process successful payments
+        if webhook_response.payment_status == "paid":
+            await subscription_service.process_successful_payment(webhook_response.session_id)
+        
+        return {"status": "success"}
+    except Exception as e:
+        print(f"Webhook error: {e}")
+        raise HTTPException(status_code=400, detail="Webhook processing failed")
+
+# Dev Dashboard Endpoints (Require Dev Access)
+@api_router.get("/dev/dashboard/metrics")
+async def get_dev_dashboard_metrics(current_user: User = Depends(require_dev_access)):
+    """Get comprehensive dev dashboard metrics"""
+    return await dev_dashboard_service.get_comprehensive_dashboard_data()
+
+@api_router.get("/dev/dashboard/system-health")
+async def get_system_health(current_user: User = Depends(require_dev_access)):
+    """Get real-time system health with AI-powered monitoring"""
+    return await dev_dashboard_service.get_system_health_metrics()
+
+@api_router.get("/dev/dashboard/user-analytics")
+async def get_user_analytics(current_user: User = Depends(require_dev_access)):
+    """Get user journey analytics and behavior insights"""
+    return await dev_dashboard_service.get_user_analytics()
+
+@api_router.get("/dev/dashboard/api-performance")
+async def get_api_performance(current_user: User = Depends(require_dev_access)):
+    """Get API performance metrics and monitoring data"""
+    return await dev_dashboard_service.get_api_performance_metrics()
+
+# Referral System Endpoints
+@api_router.get("/referrals/my-code")
+async def get_my_referral_code(current_user: User = Depends(get_current_user)):
+    """Get user's referral code and statistics"""
+    referral_stats = await db.referral_rewards.count_documents({"referrer_id": current_user.id})
+    return {
+        "referral_code": current_user.referral_code,
+        "total_referrals": referral_stats,
+        "tokens_earned": current_user.referral_tokens
+    }
+
+@api_router.post("/referrals/use-code/{referral_code}")
+async def use_referral_code(referral_code: str, current_user: User = Depends(get_current_user)):
+    """Use a referral code when signing up"""
+    if current_user.referred_by:
+        raise HTTPException(status_code=400, detail="You have already used a referral code")
+    
+    # Find referrer
+    referrer = await db.users.find_one({"referral_code": referral_code}, {"_id": 0})
+    if not referrer:
+        raise HTTPException(status_code=404, detail="Invalid referral code")
+    
+    if referrer["id"] == current_user.id:
+        raise HTTPException(status_code=400, detail="Cannot refer yourself")
+    
+    # Update user with referral
+    await db.users.update_one(
+        {"id": current_user.id},
+        {"$set": {"referred_by": referrer["id"]}}
+    )
+    
+    return {"message": "Referral code applied successfully"}
+
+# ============================================================================
+# MARKETPLACE ENDPOINTS (Gold+ Subscription Required)
+# ============================================================================
+
+@api_router.get("/marketplace/items")
+async def get_marketplace_items(
+    category: Optional[str] = None,
+    search: Optional[str] = None,
+    limit: int = 20,
+    offset: int = 0,
+    current_user: Optional[User] = Depends(get_current_user)
+):
+    """Get marketplace items (all users can browse)"""
+    try:
+        query = {"is_active": True}
+        if category:
+            query["category"] = category
+        if search:
+            query["$or"] = [
+                {"title": {"$regex": search, "$options": "i"}},
+                {"description": {"$regex": search, "$options": "i"}}
+            ]
+        
+        items = await db.marketplace_items.find(query, {"_id": 0}).skip(offset).limit(limit).to_list(None)
+        return {"items": items, "total": len(items)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/marketplace/items")
+async def create_marketplace_item(
+    item: MarketplaceItem,
+    current_user: User = Depends(require_subscription(SubscriptionTier.GOLD))
+):
+    """Create marketplace item (Gold+ subscription required)"""
+    try:
+        item.id = str(uuid.uuid4())
+        item.creator_id = current_user.id
+        item.created_at = datetime.utcnow()
+        
+        await db.marketplace_items.insert_one(item.dict())
+        return {"message": "Item created successfully", "item_id": item.id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/marketplace/my-items")
+async def get_my_marketplace_items(
+    current_user: User = Depends(require_subscription(SubscriptionTier.GOLD))
+):
+    """Get user's marketplace items"""
+    items = await db.marketplace_items.find(
+        {"creator_id": current_user.id}, {"_id": 0}
+    ).to_list(None)
+    return {"items": items}
+
+# ============================================================================
+# PERSONA CUSTOMIZATION ENDPOINTS (Gold+ Required)
+# ============================================================================
+
+@api_router.get("/personas/customizations")
+async def get_my_persona_customizations(
+    current_user: User = Depends(require_subscription(SubscriptionTier.GOLD))
+):
+    """Get user's custom personas"""
+    personas = await db.persona_customizations.find(
+        {"user_id": current_user.id}, {"_id": 0}
+    ).to_list(None)
+    return {"personas": personas}
+
+@api_router.post("/personas/customizations")
+async def create_persona_customization(
+    persona: PersonaCustomization,
+    current_user: User = Depends(require_subscription(SubscriptionTier.GOLD))
+):
+    """Create custom persona (Gold+ subscription required)"""
+    try:
+        persona.id = str(uuid.uuid4())
+        persona.user_id = current_user.id
+        persona.created_at = datetime.utcnow()
+        
+        await db.persona_customizations.insert_one(persona.dict())
+        return {"message": "Custom persona created successfully", "persona_id": persona.id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.put("/personas/customizations/{persona_id}")
+async def update_persona_customization(
+    persona_id: str,
+    updates: dict,
+    current_user: User = Depends(require_subscription(SubscriptionTier.GOLD))
+):
+    """Update custom persona"""
+    try:
+        result = await db.persona_customizations.update_one(
+            {"id": persona_id, "user_id": current_user.id},
+            {"$set": updates}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Persona not found")
+        
+        return {"message": "Persona updated successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============================================================================
+# SESSION HISTORY ENDPOINTS (Paid Users)
+# ============================================================================
+
+@api_router.get("/sessions/history")
+async def get_session_history(
+    limit: int = 50,
+    offset: int = 0,
+    current_user: User = Depends(require_subscription(SubscriptionTier.GOLD))
+):
+    """Get persistent session history (Gold+ subscription required)"""
+    sessions = await db.session_history.find(
+        {"user_id": current_user.id}, {"_id": 0}
+    ).sort("created_at", -1).skip(offset).limit(limit).to_list(None)
+    
+    return {"sessions": sessions, "total": len(sessions)}
+
+@api_router.get("/sessions/history/{session_id}")
+async def get_session_detail(
+    session_id: str,
+    current_user: User = Depends(require_subscription(SubscriptionTier.GOLD))
+):
+    """Get detailed session history"""
+    session = await db.session_history.find_one(
+        {"id": session_id, "user_id": current_user.id}, {"_id": 0}
+    )
+    
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    # Get full meeting data
+    meeting = await db.meetings.find_one({"id": session["meeting_id"]}, {"_id": 0})
+    
+    return {
+        "session": session,
+        "meeting_data": meeting
+    }
+
+# ============================================================================
+# API PLAYGROUND ENDPOINTS (VIP+ Required)
+# ============================================================================
+
+@api_router.get("/playground/api-docs")
+async def get_api_playground_docs(
+    current_user: User = Depends(require_subscription(SubscriptionTier.VIP))
+):
+    """Get API documentation for playground (VIP+ subscription required)"""
+    return {
+        "endpoints": [
+            {
+                "path": "/api/meetings",
+                "method": "POST",
+                "description": "Create new parliamentary meeting",
+                "parameters": {
+                    "topic": "string",
+                    "description": "string (optional)",
+                    "audio_mode": "string (streaming|none|podcast)"
+                }
+            },
+            {
+                "path": "/api/meetings/{id}/start-deliberation",
+                "method": "POST", 
+                "description": "Start parliamentary deliberation",
+                "parameters": {"id": "string"}
+            }
+        ],
+        "authentication": {
+            "type": "Bearer Token",
+            "header": "Authorization: Bearer YOUR_TOKEN"
+        }
+    }
+
+@api_router.post("/playground/test-endpoint")
+async def test_api_endpoint(
+    endpoint_data: dict,
+    current_user: User = Depends(require_subscription(SubscriptionTier.VIP))
+):
+    """Test API endpoint from playground (VIP+ subscription required)"""
+    try:
+        # This would implement API testing functionality
+        return {
+            "success": True,
+            "message": "API endpoint test functionality - implementation pending",
+            "data": endpoint_data
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============================================================================
+# ORIGINAL PARLIAMENTARIUM ENDPOINTS (Enhanced with User Context)
+# ============================================================================
 async def create_meeting(request: MeetingRequest):
     """Start a new parliamentary session with audio mode selection"""
     session = MeetingSession(
