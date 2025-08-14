@@ -397,9 +397,13 @@ export default function MeetingRoom() {
     navigate('/');
   };
 
-  const toggleRealTimeMode = () => {
-    setRealTimeMode(!realTimeMode);
-    if (!realTimeMode) {
+  const toggleStreamingMode = () => {
+    if (audioMode === 'streaming') {
+      setAudioMode('none');
+      setIsStreamingAudio(false);
+    } else {
+      setAudioMode('streaming');
+      setIsStreamingAudio(true);
       // Initialize conversation queue with personas
       const personas = [
         "mouse", "dolphin", "patternist", "superscholar", "diviner", 
