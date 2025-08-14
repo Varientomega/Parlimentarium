@@ -220,7 +220,7 @@ export default function MeetingRoom() {
       const analyzedIdea = updatedIdeas[ideaIndex];
       if (analyzedIdea.analyses) {
         analyzedIdea.analyses.forEach(analysis => {
-          const weightIndicator = realTimeMode && analysis.weight !== 0 
+          const weightIndicator = audioMode === 'streaming' && analysis.weight !== 0 
             ? ` (Weight: ${analysis.weight > 0 ? '+' : ''}${analysis.weight})` 
             : '';
           addMessage(
