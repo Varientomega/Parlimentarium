@@ -776,6 +776,30 @@ export default function MeetingRoom() {
                 </div>
               </div>
               
+              {/* Summary Image */}
+              {finalReport.summary_image && (
+                <div>
+                  <h3 className="font-semibold text-purple-400 mb-2">🎨 Project Summary Visualization</h3>
+                  <div className="bg-purple-900/20 p-3 rounded">
+                    <img 
+                      src={finalReport.summary_image.url} 
+                      alt="Project Summary Visualization" 
+                      className="w-full max-w-2xl h-auto rounded-lg border border-purple-500/30 shadow-lg mx-auto"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'block';
+                      }}
+                    />
+                    <div style={{display: 'none'}} className="text-red-400 text-sm text-center">
+                      [Summary image failed to load]
+                    </div>
+                    <div className="text-xs text-purple-300 mt-2 text-center">
+                      Generated from: {finalReport.summary_image.prompt}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               {/* New Meeting Button */}
               <div className="mt-4 pt-4 border-t border-gray-600">
                 <Button
