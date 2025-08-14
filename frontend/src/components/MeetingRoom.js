@@ -830,27 +830,88 @@ export default function MeetingRoom() {
         </Card>
       )}
 
-      {/* Real-Time Conversation Control */}
-      <Card className="bg-gray-800/50 border-cyan-500/30 mb-6">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            🎛️ Real-Time Conversation Control
-            <Button
-              onClick={toggleRealTimeMode}
-              variant={realTimeMode ? "destructive" : "default"}
-              size="sm"
-            >
-              {realTimeMode ? "Exit Real-Time" : "Enter Real-Time"}
-            </Button>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {!realTimeMode ? (
-            <div className="text-center p-4 bg-cyan-900/20 rounded-lg border border-cyan-500/30">
-              <p className="text-cyan-300 mb-3">🎧 Take control of the conversation!</p>
-              <p className="text-sm text-cyan-200">Listen to each persona speak individually, control the flow, and influence their impact with weight adjustments.</p>
+      {/* Audio Mode Selection */}
+      {!meetingId && (
+        <Card className="bg-gray-800/50 border-cyan-500/30 mb-6">
+          <CardHeader>
+            <CardTitle>🎵 Choose Conversation Mode</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Streaming Audio Mode */}
+              <div className="group relative">
+                <Button
+                  onClick={() => {
+                    const meetingData = JSON.parse(localStorage.getItem('currentMeeting') || '{}');
+                    createMeeting(meetingData, 'streaming');
+                  }}
+                  className="w-full h-16 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 flex flex-col items-center justify-center"
+                  disabled={isProcessing}
+                >
+                  🎵 Stream
+                </Button>
+                {/* Hover Tooltip */}
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                  Real-time audio streaming with individual speaker control and influence weights
+                </div>
+              </div>
+
+              {/* No Audio Mode */}
+              <div className="group relative">
+                <Button
+                  onClick={() => {
+                    const meetingData = JSON.parse(localStorage.getItem('currentMeeting') || '{}');
+                    createMeeting(meetingData, 'none');
+                  }}
+                  className="w-full h-16 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 flex flex-col items-center justify-center"
+                  disabled={isProcessing}
+                >
+                  💬 Text Only
+                </Button>
+                {/* Hover Tooltip */}
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                  Traditional text-based discussion without audio features
+                </div>
+              </div>
+
+              {/* Podcast Mode */}
+              <div className="group relative">
+                <Button
+                  onClick={() => {
+                    const meetingData = JSON.parse(localStorage.getItem('currentMeeting') || '{}');
+                    createMeeting(meetingData, 'podcast');
+                  }}
+                  className="w-full h-16 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 flex flex-col items-center justify-center"
+                  disabled={isProcessing}
+                >
+                  🎙️ Podcast
+                </Button>
+                {/* Hover Tooltip */}
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                  Generate complete podcast automatically - ready when conversation finishes
+                </div>
+              </div>
             </div>
-          ) : (
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Streaming Audio Controls */}
+      {audioMode === 'streaming' && meetingId && (
+        <Card className="bg-gray-800/50 border-cyan-500/30 mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              🎛️ Streaming Audio Control
+              <Button
+                onClick={toggleStreamingMode}
+                variant="destructive"
+                size="sm"
+              >
+                Exit Streaming
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="space-y-4">
               {/* Current Speaker Display */}
               <div className="bg-cyan-900/20 rounded-lg p-4 border border-cyan-500/30">
@@ -928,9 +989,9 @@ export default function MeetingRoom() {
                 ))}
               </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Podcast Generation Section */}
       {(currentPhase === 'completed' || finalReport) && (
