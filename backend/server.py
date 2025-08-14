@@ -593,6 +593,15 @@ async def retry_with_fallback(persona_id: str, message: str, context: str, perso
     
     return await get_persona_response(persona_id, message, context, temp_personas)
 
+async def get_meeting_personas(session_id: str) -> Dict:
+    """Get persona configuration for a specific meeting with custom API key assignments"""
+    meeting = await db.meetings.find_one({"id": session_id}, {"_id": 0})
+    if not meeting:
+        return PERSONAS
+    
+    persona_api_keys = meeting.get('persona_api_keys', None)
+    return get_persona_config(persona_api_keys)
+
 # Persona ordering with Contextualist last
 PERSONA_ORDER = [
     "mouse", "dolphin", "patternist", "superscholar", "diviner", 
