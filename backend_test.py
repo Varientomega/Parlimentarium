@@ -659,6 +659,22 @@ class ParliamentaryTester:
             # Test 11: API key fallback mechanism
             await self.test_api_key_fallback_mechanism()
             
+            print("\n" + "🎨" * 60)
+            print("🎨 TESTING NEW IMAGE GENERATION FUNCTIONALITY")
+            print("🎨" * 60)
+            
+            # Test 12: Image generation test endpoint
+            await self.test_image_generation_endpoint()
+            
+            # Test 13: Persona image generation (Court Illustrator & Contextualist)
+            await self.test_persona_image_generation()
+            
+            # Test 14: Final report image generation
+            await self.test_final_report_image_generation()
+            
+            # Test 15: Image generation error handling
+            await self.test_image_generation_error_handling()
+            
         finally:
             await self.cleanup_session()
             
