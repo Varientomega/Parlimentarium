@@ -257,10 +257,7 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus:
-    - "Dynamic API Key Selection Frontend"
-    - "Robust Backend Error Handling"
-    - "Meeting-Specific Persona Configuration"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
