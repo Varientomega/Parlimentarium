@@ -20,6 +20,7 @@ load_dotenv(ROOT_DIR / '.env')
 # Initialize APIs
 openrouter_key = os.environ.get('OPENROUTER_API_KEY')
 emergent_llm_key = os.environ.get('EMERGENT_LLM_KEY')
+fal_key = os.environ.get('FAL_KEY')
 gemini_keys = {
     'gemini_1': os.environ.get('GEMINI_API_KEY_1'),
     'gemini_2': os.environ.get('GEMINI_API_KEY_2'),
@@ -27,6 +28,51 @@ gemini_keys = {
     'gemini_4': os.environ.get('GEMINI_API_KEY_4'),
     'gemini_5': os.environ.get('GEMINI_API_KEY_5')
 }
+
+# Configure FAL client
+if fal_key:
+    os.environ["FAL_KEY"] = fal_key
+
+async def generate_image(prompt: str, style: str = "artistic") -> Dict:
+    """Generate an image using FAL.ai"""
+    try:
+        # Create artistic prompt based on style
+        if style == "court_illustrator":
+            enhanced_prompt = f"Elegant medieval court illustration style: {prompt}. Rich colors, ornate details, regal atmosphere, illuminated manuscript style."
+        elif style == "contextualist":
+            enhanced_prompt = f"Conceptual diagram illustration: {prompt}. Clean, informative, interconnected elements, flowing design, professional presentation style."
+        elif style == "final_summary":
+            enhanced_prompt = f"Epic summary illustration: {prompt}. Grand, comprehensive, all elements unified, ceremonial and majestic composition."
+        else:
+            enhanced_prompt = prompt
+            
+        handler = await fal_client.submit_async(
+            "fal-ai/flux/dev",
+            arguments={"prompt": enhanced_prompt}
+        )
+        
+        result = await handler.get()
+        
+        if result and result.get('images') and len(result['images']) > 0:
+            return {
+                "success": True,
+                "image_url": result['images'][0]['url'],
+                "prompt": enhanced_prompt,
+                "original_prompt": prompt
+            }
+        else:
+            return {
+                "success": False,
+                "error": "No image generated",
+                "prompt": enhanced_prompt
+            }
+            
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "prompt": prompt
+        }
 
 # API Key management and fallback system
 class APIKeyManager:
