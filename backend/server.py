@@ -438,70 +438,158 @@ class MeetingRequest(BaseModel):
 class UserPauseRequest(BaseModel):
     user_input: str
 
-# LLM Integration Functions with enhanced persona context
-async def get_persona_response(persona_id: str, message: str, context: str = "") -> str:
-    """Get response from a specific persona with full personality context"""
+# LLM Integration Functions with enhanced persona context and robust error handling
+async def get_persona_response(persona_id: str, message: str, context: str = "", personas_config: Dict = None) -> str:
+    """Get response from a specific persona with full personality context and robust error handling"""
+    
+    # Use provided config or global PERSONAS
+    current_personas = personas_config if personas_config else PERSONAS
+    
+    if persona_id not in current_personas:
+        return f"[Unknown persona: {persona_id}]"
+        
+    persona = current_personas[persona_id]
+    
+    # Enhanced system prompt with personality details
+    full_system_prompt = f"""
+    {persona['system_prompt']}
+    
+    PERSONALITY PROFILE:
+    - Dislikes: {persona['dislikes']}
+    - Avoids: {persona['avoids']}
+    - Goal: {persona['goal']}
+    - Driven by: {persona['drives']}
+    - Vibe: {persona['vibe']}
+    - Creativity Level: {persona['creativity']}/10
+    
+    Always respond authentically according to your personality profile. Let your dislikes, goals, and drives influence your perspective.
+    """
+    
+    # Get API key assignment for this persona
+    api_assignment = persona.get('api_key_assignment', {'primary': 'gemini_1', 'fallback': ['gemini_2', 'gemini_3']})
+    primary_key_id = api_assignment['primary']
+    fallback_keys = api_assignment['fallback']
+    
+    # Try to get a working API key
+    selected_key_id, selected_api_key = api_key_manager.get_working_key(primary_key_id, fallback_keys)
+    
+    if not selected_api_key:
+        return f"[{persona['name']} experienced a mystical disturbance: No working API keys available]"
+    
+    # Determine API type and make call
     try:
-        persona = PERSONAS[persona_id]
-        
-        # Enhanced system prompt with personality details
-        full_system_prompt = f"""
-        {persona['system_prompt']}
-        
-        PERSONALITY PROFILE:
-        - Dislikes: {persona['dislikes']}
-        - Avoids: {persona['avoids']}
-        - Goal: {persona['goal']}
-        - Driven by: {persona['drives']}
-        - Vibe: {persona['vibe']}
-        - Creativity Level: {persona['creativity']}/10
-        
-        Always respond authentically according to your personality profile. Let your dislikes, goals, and drives influence your perspective.
-        """
-        
-        if persona['api_type'] == 'openrouter':
+        if selected_key_id == 'emergent_llm':
+            # Use emergent integrations for the emergent key
+            try:
+                from emergentintegrations.llm.chat import LlmChat, UserMessage
+                chat = LlmChat(api_key=selected_api_key, model='gemini-1.5-flash-latest')
+                response = await chat.chat([UserMessage(f"{full_system_prompt}\n\nContext: {context}\n\nUser: {message}")])
+                return response.content
+            except Exception as e:
+                api_key_manager.mark_key_failed(selected_key_id)
+                # Try next fallback
+                return await retry_with_fallback(persona_id, message, context, personas_config, selected_key_id)
+                
+        elif selected_key_id.startswith('gemini_'):
+            # Use direct Gemini API
+            genai.configure(api_key=selected_api_key)
+            model = genai.GenerativeModel(persona['model'])
+            full_prompt = f"{full_system_prompt}\n\nContext: {context}\n\nUser: {message}"
+            
+            try:
+                response = await model.generate_content_async(full_prompt)
+                return response.text
+            except Exception as e:
+                error_message = str(e).lower()
+                
+                # Check for rate limiting or quota issues
+                if any(keyword in error_message for keyword in ['quota', 'rate limit', '429', 'resource_exhausted']):
+                    api_key_manager.mark_key_failed(selected_key_id)
+                    return await retry_with_fallback(persona_id, message, context, personas_config, selected_key_id)
+                    
+                # Check for authentication issues
+                elif any(keyword in error_message for keyword in ['401', 'unauthorized', 'authentication', 'invalid api key']):
+                    api_key_manager.mark_key_failed(selected_key_id)
+                    return await retry_with_fallback(persona_id, message, context, personas_config, selected_key_id)
+                    
+                # Other errors - mark as failed and retry
+                else:
+                    api_key_manager.mark_key_failed(selected_key_id)
+                    return await retry_with_fallback(persona_id, message, context, personas_config, selected_key_id)
+                    
+        elif selected_key_id == 'openrouter':
             # Direct OpenRouter API call
             import aiohttp
             
             headers = {
-                "Authorization": f"Bearer {openrouter_key}",
+                "Authorization": f"Bearer {selected_api_key}",
                 "Content-Type": "application/json",
                 "HTTP-Referer": "https://parliamentarium.app",
                 "X-Title": "Parliamentarium"
             }
             
             data = {
-                "model": persona['model'],
+                "model": persona.get('openrouter_model', 'anthropic/claude-3.5-sonnet'),
                 "messages": [
                     {"role": "system", "content": full_system_prompt},
                     {"role": "user", "content": f"{context}\n\n{message}"}
                 ]
             }
             
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    "https://openrouter.ai/api/v1/chat/completions",
-                    headers=headers,
-                    json=data,
-                    timeout=aiohttp.ClientTimeout(total=30)
-                ) as response:
-                    if response.status == 200:
-                        result = await response.json()
-                        return result['choices'][0]['message']['content']
-                    else:
-                        error_text = await response.text()
-                        return f"[{persona['name']} experienced an OpenRouter error: {response.status}]"
-                        
-        elif persona['api_type'] == 'gemini':
-            # Use individual API key for this persona
-            genai.configure(api_key=persona['api_key'])
-            model = genai.GenerativeModel(persona['model'])
-            full_prompt = f"{full_system_prompt}\n\nContext: {context}\n\nUser: {message}"
-            response = await model.generate_content_async(full_prompt)
-            return response.text
-            
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.post(
+                        "https://openrouter.ai/api/v1/chat/completions",
+                        headers=headers,
+                        json=data,
+                        timeout=aiohttp.ClientTimeout(total=30)
+                    ) as response:
+                        if response.status == 200:
+                            result = await response.json()
+                            return result['choices'][0]['message']['content']
+                        else:
+                            # Mark key as failed and retry with fallback
+                            api_key_manager.mark_key_failed(selected_key_id)
+                            return await retry_with_fallback(persona_id, message, context, personas_config, selected_key_id)
+                            
+            except Exception as e:
+                api_key_manager.mark_key_failed(selected_key_id)
+                return await retry_with_fallback(persona_id, message, context, personas_config, selected_key_id)
+    
     except Exception as e:
-        return f"[{persona['name']} experienced a mystical disturbance: {str(e)}]"
+        # Final fallback - return error with persona name
+        return f"[{persona['name']} experienced a mystical disturbance: {str(e)[:100]}...]"
+
+async def retry_with_fallback(persona_id: str, message: str, context: str, personas_config: Dict, failed_key_id: str) -> str:
+    """Retry the request with the remaining fallback keys"""
+    current_personas = personas_config if personas_config else PERSONAS
+    persona = current_personas[persona_id]
+    
+    # Get remaining fallback keys (excluding the failed one)
+    api_assignment = persona.get('api_key_assignment', {'primary': 'gemini_1', 'fallback': ['gemini_2', 'gemini_3']})
+    remaining_keys = [key for key in api_assignment['fallback'] if key != failed_key_id]
+    
+    if not remaining_keys:
+        return f"[{persona['name']} experienced complete mystical failure: All API keys exhausted]"
+    
+    # Try with the next available key
+    next_key_id, next_api_key = api_key_manager.get_working_key(remaining_keys[0], remaining_keys[1:])
+    
+    if not next_api_key:
+        return f"[{persona['name']} experienced complete mystical failure: No more working keys]"
+    
+    # Recursively call get_persona_response with updated key assignment
+    temp_assignment = {
+        'primary': next_key_id,
+        'fallback': [key for key in remaining_keys if key != next_key_id]
+    }
+    
+    # Create temporary persona config with updated assignment
+    temp_personas = dict(current_personas)
+    temp_personas[persona_id] = dict(persona)
+    temp_personas[persona_id]['api_key_assignment'] = temp_assignment
+    
+    return await get_persona_response(persona_id, message, context, temp_personas)
 
 # Persona ordering with Contextualist last
 PERSONA_ORDER = [
