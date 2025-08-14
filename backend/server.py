@@ -18,13 +18,54 @@ load_dotenv(ROOT_DIR / '.env')
 
 # Initialize APIs
 openrouter_key = os.environ.get('OPENROUTER_API_KEY')
-gemini_keys = [
-    os.environ.get('GEMINI_API_KEY_1'),
-    os.environ.get('GEMINI_API_KEY_2'),
-    os.environ.get('GEMINI_API_KEY_3'),
-    os.environ.get('GEMINI_API_KEY_4'),
-    os.environ.get('GEMINI_API_KEY_5')
-]
+emergent_llm_key = os.environ.get('EMERGENT_LLM_KEY')
+gemini_keys = {
+    'gemini_1': os.environ.get('GEMINI_API_KEY_1'),
+    'gemini_2': os.environ.get('GEMINI_API_KEY_2'),
+    'gemini_3': os.environ.get('GEMINI_API_KEY_3'),
+    'gemini_4': os.environ.get('GEMINI_API_KEY_4'),
+    'gemini_5': os.environ.get('GEMINI_API_KEY_5')
+}
+
+# API Key management and fallback system
+class APIKeyManager:
+    def __init__(self):
+        self.gemini_keys = gemini_keys
+        self.emergent_key = emergent_llm_key
+        self.openrouter_key = openrouter_key
+        self.key_usage_count = {key: 0 for key in gemini_keys.keys()}
+        self.failed_keys = set()
+        
+    def get_key_by_id(self, key_id):
+        """Get actual API key by key ID"""
+        if key_id in self.gemini_keys:
+            return self.gemini_keys[key_id]
+        elif key_id == 'emergent_llm':
+            return self.emergent_key
+        elif key_id == 'openrouter':
+            return self.openrouter_key
+        return None
+    
+    def mark_key_failed(self, key_id):
+        """Mark a key as failed for this session"""
+        self.failed_keys.add(key_id)
+        
+    def get_working_key(self, primary_key_id, fallback_keys):
+        """Get the first working key from primary + fallbacks"""
+        all_keys = [primary_key_id] + fallback_keys
+        
+        for key_id in all_keys:
+            if key_id not in self.failed_keys and self.get_key_by_id(key_id):
+                self.key_usage_count[key_id] = self.key_usage_count.get(key_id, 0) + 1
+                return key_id, self.get_key_by_id(key_id)
+                
+        # If all keys failed, try primary again (maybe it recovered)
+        if self.get_key_by_id(primary_key_id):
+            return primary_key_id, self.get_key_by_id(primary_key_id)
+            
+        return None, None
+
+api_key_manager = APIKeyManager()
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
