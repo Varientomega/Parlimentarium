@@ -1794,10 +1794,13 @@ async def contextualist_integration(winning_idea: Dict, supplemental_works: List
     
     return await get_persona_response("contextualist", prompt, meeting_context)
 
-async def get_all_persona_ideas(topic: str, description: str, uploaded_files: List[Dict] = None) -> List[Dict]:
+async def get_all_persona_ideas(topic: str, description: str, uploaded_files: List[Dict] = None, personas_config: Dict = None) -> List[Dict]:
     """Phase 1: Get initial ideas from all personas with uploaded file context"""
     ideas = []
     tasks = []
+    
+    # Use provided config or global PERSONAS
+    current_personas = personas_config if personas_config else PERSONAS
     
     # Prepare context from uploaded files
     files_context = ""
@@ -1808,16 +1811,16 @@ async def get_all_persona_ideas(topic: str, description: str, uploaded_files: Li
         ])
         files_context = f"\n\nUploaded Context Files:\n{files_summary}\n\nPlease consider this context when formulating your response."
     
-    for persona_id, persona in PERSONAS.items():
+    for persona_id, persona in current_personas.items():
         prompt = f"The parliament seeks your wisdom on: '{topic}'. {description}. Provide ONE specific, actionable idea related to this topic. Keep it concise but innovative.{files_context}"
-        tasks.append(get_persona_response(persona_id, prompt))
+        tasks.append(get_persona_response(persona_id, prompt, "", personas_config))
     
     responses = await asyncio.gather(*tasks)
     
-    for i, (persona_id, response) in enumerate(zip(PERSONAS.keys(), responses)):
+    for i, (persona_id, response) in enumerate(zip(current_personas.keys(), responses)):
         ideas.append({
             "persona_id": persona_id,
-            "persona_name": PERSONAS[persona_id]['name'],
+            "persona_name": current_personas[persona_id]['name'],
             "idea": response,
             "scores": [],
             "average_score": 0,
