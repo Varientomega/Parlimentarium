@@ -30,8 +30,9 @@ export default function MeetingRoom() {
   const [podcastInfo, setPodcastInfo] = useState(null);
   const [isGeneratingPodcast, setIsGeneratingPodcast] = useState(false);
   
-  // Real-time conversation control states
-  const [realTimeMode, setRealTimeMode] = useState(false);
+  // Audio mode states
+  const [audioMode, setAudioMode] = useState('none'); // 'streaming', 'none', 'podcast'
+  const [isStreamingAudio, setIsStreamingAudio] = useState(false);
   const [currentSpeaker, setCurrentSpeaker] = useState(0);
   const [speakerWeights, setSpeakerWeights] = useState({});
   const [isPlaying, setIsPlaying] = useState(false);
