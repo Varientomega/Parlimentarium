@@ -501,6 +501,32 @@ export default function ParliamentariumBoard() {
               
               <p className="text-sm text-gray-300 mb-3">{persona.description}</p>
               
+              {/* API Key Selection Dropdown */}
+              <div className="mb-3 border-2 border-blue-500/30 rounded-lg p-2 bg-blue-900/10">
+                <label className="text-xs text-blue-300 font-medium mb-1 block">
+                  🔑 Primary API Key
+                </label>
+                <div className="relative">
+                  <select
+                    value={personaApiKeys[persona.id]?.primary || 'gemini_1'}
+                    onChange={(e) => updatePersonaKey(persona.id, e.target.value)}
+                    className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs text-gray-200 appearance-none cursor-pointer hover:bg-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    {availableKeys.map(key => (
+                      <option key={key.id} value={key.id} className="bg-gray-700">
+                        {key.name}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-2 top-1.5 h-3 w-3 text-gray-400 pointer-events-none" />
+                </div>
+                <div className="text-xs text-blue-200/70 mt-1">
+                  Fallbacks: {personaApiKeys[persona.id]?.fallback.slice(0, 2).map(id => 
+                    availableKeys.find(k => k.id === id)?.name
+                  ).join(', ')}...
+                </div>
+              </div>
+              
               <div className="text-xs text-gray-400 space-y-1">
                 <div>🤖 {persona.llm}</div>
                 <div>🏢 {persona.provider}</div>
