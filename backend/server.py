@@ -2958,6 +2958,27 @@ async def root():
 # Include router
 app.include_router(api_router)
 
+@api_router.get("/audio/{filename}")
+async def serve_audio(filename: str):
+    """Serve generated audio files"""
+    try:
+        # In production, this would serve actual audio files from storage
+        # For now, return mock audio data
+        from fastapi.responses import Response
+        
+        mock_audio_data = b"Mock speaker audio data"
+        
+        return Response(
+            content=mock_audio_data,
+            media_type="audio/mpeg",
+            headers={
+                "Content-Disposition": f"inline; filename={filename}",
+                "Accept-Ranges": "bytes"
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=404, detail="Audio file not found")
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
