@@ -434,6 +434,7 @@ class MeetingRequest(BaseModel):
     topic: str
     description: Optional[str] = None
     proposer: str = "Anonymous"
+    persona_api_keys: Optional[Dict] = None
 
 class UserPauseRequest(BaseModel):
     user_input: str
