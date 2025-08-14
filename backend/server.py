@@ -2070,7 +2070,7 @@ async def analyze_idea_with_all_personas(idea: Dict, context: str) -> Dict:
     return idea
 
 async def generate_final_report(winner_idea: Dict, all_ideas: List[Dict], topic: str) -> Dict:
-    """Phase 4: Generate comprehensive implementation report"""
+    """Phase 4: Generate comprehensive implementation report with summary image"""
     context = f"""
     The parliament has deliberated on '{topic}' and chosen the winning idea: "{winner_idea['idea']}" 
     (Score: {winner_idea['average_score']}/10).
@@ -2099,14 +2099,32 @@ async def generate_final_report(winner_idea: Dict, all_ideas: List[Dict], topic:
     implementation = await get_persona_response("ego", ego_prompt)
     questions = await get_persona_response("superscholar", questions_prompt)
     
-    return {
+    # Generate final project summary image
+    summary_image = None
+    try:
+        summary_prompt = f"Complete project summary visualization: '{topic}' - Winning idea: '{winner_idea['idea'][:100]}...'. Parliamentary decision with {len(all_ideas)} ideas evaluated, final score {winner_idea['average_score']}/10"
+        image_result = await generate_image(summary_prompt, "final_summary")
+        
+        if image_result["success"]:
+            summary_image = {
+                "url": image_result["image_url"],
+                "prompt": image_result["original_prompt"],
+                "enhanced_prompt": image_result["prompt"]
+            }
+    except Exception as e:
+        print(f"Final summary image generation failed: {e}")
+    
+    report = {
         "winning_idea": winner_idea,
         "implementation_plan": implementation,
         "follow_up_questions": questions,
         "final_score": winner_idea['average_score'],
         "total_ideas_evaluated": len(all_ideas),
-        "generated_at": datetime.utcnow().isoformat()
+        "generated_at": datetime.utcnow().isoformat(),
+        "summary_image": summary_image
     }
+    
+    return report
 
 # API Endpoints
 @api_router.post("/meetings", response_model=MeetingSession)
