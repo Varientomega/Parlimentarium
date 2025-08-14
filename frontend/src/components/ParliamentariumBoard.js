@@ -298,10 +298,6 @@ export default function ParliamentariumBoard({ user }) {
     navigate('/meeting');
   };
 
-  const handleStartMeeting = () => {
-    handleStartMeetingWithMode('none'); // Default to no audio mode
-  };
-
   const handleStartMeetingWithMode = (audioMode) => {
     if (!newTopic.trim()) return;
     
@@ -319,6 +315,10 @@ export default function ParliamentariumBoard({ user }) {
     // Store in localStorage for the meeting component
     localStorage.setItem('currentMeeting', JSON.stringify(meetingData));
     navigate('/meeting');
+  };
+
+  const handleStartMeeting = () => {
+    handleStartMeetingWithMode('none'); // Default to no audio mode
   };
 
   const getGlowClass = (glow) => {
