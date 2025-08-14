@@ -483,6 +483,7 @@ class MeetingRequest(BaseModel):
     description: Optional[str] = None
     proposer: str = "Anonymous"
     persona_api_keys: Optional[Dict] = None
+    audio_mode: Optional[str] = "none"  # 'streaming', 'none', 'podcast'
 
 class UserPauseRequest(BaseModel):
     user_input: str
