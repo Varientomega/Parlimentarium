@@ -3027,6 +3027,16 @@ async def integrate_final_vision(session_id: str):
         {"$set": {"final_report": final_report, "phase": "completed", "status": "completed"}}
     )
     
+    # Auto-start podcast generation if in podcast mode
+    audio_mode = meeting.get('audio_mode', 'none')
+    if audio_mode == 'podcast':
+        try:
+            # Start podcast generation in background
+            import asyncio
+            asyncio.create_task(auto_generate_podcast(session_id))
+        except Exception as e:
+            print(f"Auto-podcast generation failed: {e}")
+    
     return {"message": "Final integration complete", "integration": integration}
 
 @api_router.post("/meetings/{session_id}/pause")
