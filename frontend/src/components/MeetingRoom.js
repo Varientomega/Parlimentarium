@@ -54,11 +54,17 @@ export default function MeetingRoom() {
         topic: topicData.topic,
         description: topicData.description,
         proposer: topicData.proposedBy,
-        is_creation_task: topicData.isCreationTask || false
+        is_creation_task: topicData.isCreationTask || false,
+        persona_api_keys: topicData.personaApiKeys
       });
       
       setMeetingId(response.data.id);
       addMessage("System", "🏛️ The Parliamentarium is now in session. Initializing sacred discourse...", "system");
+      
+      // Show persona API key configuration if provided
+      if (topicData.personaApiKeys) {
+        addMessage("System", "⚙️ Custom persona API key assignments loaded for enhanced reliability.", "system");
+      }
       
       // If creation task with files, upload them first
       if (topicData.isCreationTask && topicData.uploadedFiles && topicData.uploadedFiles.length > 0) {
