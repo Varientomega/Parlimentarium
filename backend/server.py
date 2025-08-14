@@ -2131,7 +2131,7 @@ async def generate_final_report(winner_idea: Dict, all_ideas: List[Dict], topic:
 # API Endpoints
 @api_router.post("/meetings", response_model=MeetingSession)
 async def create_meeting(request: MeetingRequest):
-    """Start a new parliamentary session"""
+    """Start a new parliamentary session with audio mode selection"""
     session = MeetingSession(
         topic=request.topic,
         description=request.description,
@@ -2139,13 +2139,17 @@ async def create_meeting(request: MeetingRequest):
         is_creation_task=getattr(request, 'is_creation_task', False)
     )
     
-    # Store persona API key configuration for this meeting
+    # Store persona API key configuration and audio mode for this meeting
+    session_data = session.dict()
     if request.persona_api_keys:
-        # Update global personas for this session (stored as meeting metadata)
-        session_data = session.dict()
         session_data['persona_api_keys'] = request.persona_api_keys
-    else:
-        session_data = session.dict()
+    if request.audio_mode:
+        session_data['audio_mode'] = request.audio_mode
+        
+        # Auto-start podcast generation if in podcast mode
+        if request.audio_mode == 'podcast':
+            session_data['auto_generate_podcast'] = True
+            session_data['podcast_status'] = 'scheduled'
     
     # Store in database
     await db.meetings.insert_one(session_data)
