@@ -180,7 +180,7 @@ const observerSeats = [
   }
 ];
 
-export default function ParliamentariumBoard() {
+export default function ParliamentariumBoard({ user }) {
   const [selectedPersona, setSelectedPersona] = useState(null);
   const [newTopic, setNewTopic] = useState("");
   const [topicDescription, setTopicDescription] = useState("");
