@@ -176,6 +176,61 @@ export default function MeetingRoom() {
     }
   };
 
+  const analyzeIdea = async (ideaIndex) => {
+    try {
+      setIsProcessing(true);
+      setCurrentPhase('analysis');
+      setCurrentIdeaIndex(ideaIndex);
+      
+      addMessage("The EGO", `🔍 Initiating analysis of idea ${ideaIndex + 1}...`, "system");
+      
+      let response;
+      
+      // Use weighted analysis if in real-time mode with speaker weights
+      if (realTimeMode && Object.keys(speakerWeights).length > 0) {
+        response = await axios.post(`${API}/meetings/${meetingId}/analyze-idea-weighted/${ideaIndex}`, {
+          speaker_weights: speakerWeights
+        });
+      } else {
+        // Use traditional analysis
+        response = await axios.post(`${API}/meetings/${meetingId}/analyze-idea/${ideaIndex}`);
+      }
+      
+      const updatedIdeas = response.data.ideas;
+      setIdeas(updatedIdeas);
+      
+      // Add analysis messages
+      const analyzedIdea = updatedIdeas[ideaIndex];
+      if (analyzedIdea.analyses) {
+        analyzedIdea.analyses.forEach(analysis => {
+          const weightIndicator = realTimeMode && analysis.weight !== 0 
+            ? ` (Weight: ${analysis.weight > 0 ? '+' : ''}${analysis.weight})` 
+            : '';
+          addMessage(
+            analysis.persona_name, 
+            `Score: ${analysis.score}/10${weightIndicator} - ${analysis.reasoning}`, 
+            "analysis"
+          );
+        });
+      }
+      
+      addMessage("System", `✅ Analysis complete! Average score: ${analyzedIdea.average_score}/10`, "system");
+      
+      // Auto-proceed to next idea or finalization
+      if (ideaIndex < ideas.length - 1) {
+        setTimeout(() => analyzeIdea(ideaIndex + 1), 2000);
+      } else {
+        setTimeout(() => finalizeDecision(), 2000);
+      }
+      
+    } catch (error) {
+      console.error('Error analyzing idea:', error);
+      addMessage("System", "❌ Analysis failed. Please try again.", "error");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const finalizeMeeting = async (sessionId) => {
     try {
       setCurrentPhase('finalization');
