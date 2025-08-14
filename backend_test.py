@@ -432,6 +432,23 @@ class ParliamentaryTester:
             # Test 7: Get final report
             await self.test_get_report()
             
+            print("\n" + "🔑" * 60)
+            print("🔑 TESTING NEW API KEY MANAGEMENT SYSTEM")
+            print("🔑" * 60)
+            
+            # Test 8: Create meeting with custom API keys
+            custom_success, custom_meeting_id = await self.test_create_meeting_with_custom_api_keys()
+            
+            if custom_success and custom_meeting_id:
+                # Test 9: Verify custom API keys are stored
+                await self.test_verify_custom_api_keys_stored(custom_meeting_id)
+                
+                # Test 10: Start deliberation with custom keys
+                await self.test_start_deliberation_with_custom_keys(custom_meeting_id)
+            
+            # Test 11: API key fallback mechanism
+            await self.test_api_key_fallback_mechanism()
+            
         finally:
             await self.cleanup_session()
             
@@ -453,6 +470,15 @@ class ParliamentaryTester:
             for result in self.test_results:
                 if not result['success']:
                     print(f"  - {result['test']}: {result['message']}")
+        
+        # Specific API Key Management Summary
+        api_key_tests = [r for r in self.test_results if 'API' in r['test'] or 'Custom' in r['test'] or 'Fallback' in r['test']]
+        if api_key_tests:
+            print(f"\n🔑 API KEY MANAGEMENT TESTS:")
+            api_passed = sum(1 for r in api_key_tests if r['success'])
+            print(f"API Key Tests: {len(api_key_tests)}")
+            print(f"API Key Passed: {api_passed}")
+            print(f"API Key Success Rate: {(api_passed/len(api_key_tests))*100:.1f}%")
                     
         return passed == total
 
