@@ -2286,6 +2286,80 @@ async def download_deliverable(session_id: str):
     
     return {"deliverable": final_deliverable}
 
+@api_router.post("/meetings/{session_id}/analyze-idea-weighted/{idea_index}")
+async def analyze_idea_weighted(session_id: str, idea_index: int, request: dict):
+    """Phase 2: Analyze a specific idea with speaker weights"""
+    meeting = await db.meetings.find_one({"id": session_id}, {"_id": 0})
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    
+    ideas = meeting.get('ideas', [])
+    if idea_index >= len(ideas):
+        raise HTTPException(status_code=400, detail="Invalid idea index")
+    
+    speaker_weights = request.get('speaker_weights', {})
+    
+    try:
+        # Get meeting-specific persona configuration
+        meeting_personas = await get_meeting_personas(session_id)
+        
+        # Analyze the idea with weights
+        analysis = await analyze_idea_with_weights(
+            ideas[idea_index], 
+            f"Topic: {meeting['topic']}. Description: {meeting['description'] or ''}", 
+            speaker_weights,
+            meeting_personas
+        )
+        
+        # Update the idea with analysis
+        ideas[idea_index].update(analysis)
+        
+        # Update meeting in database
+        await db.meetings.update_one(
+            {"id": session_id},
+            {"$set": {"ideas": ideas, "current_idea_index": idea_index + 1}}
+        )
+        
+        return {
+            "phase": "analysis",
+            "current_idea_index": idea_index,
+            "analysis": analysis,
+            "ideas": ideas
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Analysis error: {str(e)}")
+
+@api_router.get("/meetings/{session_id}/download-podcast")
+async def download_podcast(session_id: str):
+    """Download the generated podcast file"""
+    meeting = await db.meetings.find_one({"id": session_id}, {"_id": 0})
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    
+    podcast_info = meeting.get('generated_podcast')
+    if not podcast_info:
+        raise HTTPException(status_code=400, detail="No podcast available")
+    
+    try:
+        # In production, this would return the actual audio file
+        # For now, return podcast information and mock download
+        from fastapi.responses import Response
+        
+        # Mock audio data - in production would read actual MP3 file
+        mock_audio_data = b"Mock podcast audio data for download"
+        
+        return Response(
+            content=mock_audio_data,
+            media_type="audio/mpeg",
+            headers={
+                "Content-Disposition": f"attachment; filename=podcast_{session_id}.mp3",
+                "Content-Length": str(len(mock_audio_data))
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Download error: {str(e)}")
+
 @api_router.post("/meetings/{session_id}/generate-podcast")
 async def start_podcast_generation(session_id: str):
     """Start generating podcast from completed parliamentary session"""
