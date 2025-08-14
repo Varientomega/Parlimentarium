@@ -288,6 +288,7 @@ export default function ParliamentariumBoard() {
       proposedBy: userName || "Anonymous",
       isCreationTask: isCreationTask,
       uploadedFiles: uploadedFiles,
+      personaApiKeys: personaApiKeys,
       timestamp: new Date().toISOString()
     };
     
