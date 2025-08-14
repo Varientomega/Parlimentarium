@@ -1929,8 +1929,16 @@ async def create_meeting(request: MeetingRequest):
         is_creation_task=getattr(request, 'is_creation_task', False)
     )
     
+    # Store persona API key configuration for this meeting
+    if request.persona_api_keys:
+        # Update global personas for this session (stored as meeting metadata)
+        session_data = session.dict()
+        session_data['persona_api_keys'] = request.persona_api_keys
+    else:
+        session_data = session.dict()
+    
     # Store in database
-    await db.meetings.insert_one(session.dict())
+    await db.meetings.insert_one(session_data)
     
     return session
 
