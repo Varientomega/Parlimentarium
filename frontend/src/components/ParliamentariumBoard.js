@@ -279,7 +279,7 @@ export default function ParliamentariumBoard({ user }) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const handleStartMeeting = () => {
+  const handleStartMeetingWithMode = (audioMode) => {
     if (!newTopic.trim()) return;
     
     const meetingData = {
@@ -289,12 +289,17 @@ export default function ParliamentariumBoard({ user }) {
       isCreationTask: isCreationTask,
       uploadedFiles: uploadedFiles,
       personaApiKeys: personaApiKeys,
+      audioMode: audioMode,
       timestamp: new Date().toISOString()
     };
     
     // Store in localStorage for the meeting component
     localStorage.setItem('currentMeeting', JSON.stringify(meetingData));
     navigate('/meeting');
+  };
+
+  const handleStartMeeting = () => {
+    handleStartMeetingWithMode('none'); // Default to no audio mode
   };
 
   const handleStartMeetingWithMode = (audioMode) => {
