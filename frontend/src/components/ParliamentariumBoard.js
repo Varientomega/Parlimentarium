@@ -297,6 +297,25 @@ export default function ParliamentariumBoard() {
     navigate('/meeting');
   };
 
+  const handleStartMeetingWithMode = (audioMode) => {
+    if (!newTopic.trim()) return;
+    
+    const meetingData = {
+      topic: newTopic,
+      description: topicDescription,
+      proposedBy: userName || "Anonymous",
+      isCreationTask: isCreationTask,
+      uploadedFiles: uploadedFiles,
+      personaApiKeys: personaApiKeys,
+      audioMode: audioMode,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Store in localStorage for the meeting component
+    localStorage.setItem('currentMeeting', JSON.stringify(meetingData));
+    navigate('/meeting');
+  };
+
   const getGlowClass = (glow) => {
     const glowMap = {
       orange: 'shadow-orange-500/50 border-orange-400',
