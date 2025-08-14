@@ -74,7 +74,7 @@ function App() {
             )}
             <button
               onClick={() => window.location.href = '/subscription'}
-              className="bg-gold-600 hover:bg-gold-700 text-white px-3 py-2 rounded-lg text-sm transition-colors"
+              className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-2 rounded-lg text-sm transition-colors"
             >
               💎 Upgrade
             </button>
