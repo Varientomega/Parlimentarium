@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from passlib.context import CryptContext
-from models import User, UserRole, SubscriptionTier
+from models import User, SubscriptionTier
 from typing import Optional
 
 # Configuration
