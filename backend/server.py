@@ -53,6 +53,8 @@ async def generate_image(prompt: str, style: str = "artistic") -> Dict:
             enhanced_prompt = f"Conceptual diagram illustration: {prompt}. Clean, informative, interconnected elements, flowing design, professional presentation style."
         elif style == "final_summary":
             enhanced_prompt = f"Epic summary illustration: {prompt}. Grand, comprehensive, all elements unified, ceremonial and majestic composition."
+        elif style == "persona_custom":
+            enhanced_prompt = f"Custom persona avatar illustration: {prompt}. Artistic character design, unique personality expression, vibrant colors, professional digital art style."
         else:
             enhanced_prompt = prompt
             
