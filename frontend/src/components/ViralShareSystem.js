@@ -186,22 +186,22 @@ Generated using advanced collective intelligence at Parliamentarium.ai`;
               {
                 style: 'breakthrough',
                 icon: <Brain className="w-6 h-6" />,
-                title: 'Breakthrough Thinker',
-                description: 'Frame as your innovative decision framework',
+                title: 'Personal Innovation',
+                description: 'Share as your personal breakthrough discovery',
                 color: 'from-purple-500 to-pink-500'
               },
               {
-                style: 'innovation',
+                style: 'research',
                 icon: <Lightbulb className="w-6 h-6" />,
-                title: 'Innovation Pioneer',
-                description: 'Highlight your cutting-edge methodology',
+                title: 'Research Methodology',
+                description: 'Frame as systematic research approach',
                 color: 'from-blue-500 to-cyan-500'
               },
               {
-                style: 'leadership',
+                style: 'problem_solving',
                 icon: <Target className="w-6 h-6" />,
-                title: 'Strategic Leader',
-                description: 'Position as leadership insight sharing',
+                title: 'Problem-Solving Win',
+                description: 'Share as overcoming a challenge',
                 color: 'from-green-500 to-emerald-500'
               }
             ].map((option) => (
