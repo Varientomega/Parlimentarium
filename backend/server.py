@@ -52,9 +52,32 @@ db = client[DB_NAME]
 
 # Initialize services
 auth_service = AuthService(db)
-orchestrator = init_orchestrator(db, None)  # meeting_service will be set later
-api_manager = init_api_management(db)
-conversation_intel, usage_analytics = init_analytics(db)
+
+# Temporary placeholders until we fix emergentintegrations
+class MockOrchestrator:
+    async def process_agent_request(self, request): return {"status": "mock"}
+    async def coordinate_multi_agents(self, agents, task): return {"status": "mock"}
+    async def emergency_fallback(self, agent, context, time_limit): return {"status": "mock"}
+
+class MockAnalytics:
+    async def track_event(self, *args, **kwargs): pass
+    async def get_user_journey(self, *args, **kwargs): return {"status": "mock"}
+    async def get_platform_insights(self, *args, **kwargs): return {"status": "mock"}
+    async def get_conversation_trends(self, *args, **kwargs): return {"status": "mock"}
+    async def analyze_conversation_quality(self, *args, **kwargs): return {"status": "mock"}
+
+class MockAPIManager:
+    async def validate_api_key(self, key): return None
+    async def check_rate_limit(self, key): return True, {}
+    async def create_api_key(self, *args, **kwargs): return {"status": "mock"}
+    async def list_user_keys(self, *args, **kwargs): return []
+    async def revoke_api_key(self, *args, **kwargs): return True
+    async def get_usage_stats(self, *args, **kwargs): return {"status": "mock"}
+
+orchestrator = MockOrchestrator()
+api_manager = MockAPIManager() 
+usage_analytics = MockAnalytics()
+conversation_intel = MockAnalytics()
 
 # LLM Configuration
 LLM_KEYS = {
