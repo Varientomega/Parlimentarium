@@ -500,6 +500,7 @@ export default function ParliamentariumBoard({ user }) {
                   onClick={handleStartMeeting}
                   disabled={!newTopic.trim()}
                   className="bg-gradient-to-r from-purple-600 to-yellow-600 hover:from-purple-700 hover:to-yellow-700 text-white font-bold py-3 px-8 rounded-lg text-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                  title="undo - Summon the parliament to deliberate and create solutions"
                 >
                   🏛️ Convene the Parliament
                 </Button>
