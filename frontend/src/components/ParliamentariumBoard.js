@@ -631,8 +631,9 @@ export default function ParliamentariumBoard({ user }) {
                       onClick={() => generatePersonaImage(persona.id, persona.name)}
                       className="w-full text-xs bg-green-600 hover:bg-green-700 h-7"
                       title="Generate a custom image for this persona that ships with them"
+                      disabled={isGeneratingImage[persona.id]}
                     >
-                      ✨ Create Image
+                      {isGeneratingImage[persona.id] ? '⏳ Generating...' : '✨ Create Image'}
                     </Button>
                   </div>
                 )}
