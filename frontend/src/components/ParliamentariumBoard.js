@@ -582,6 +582,22 @@ export default function ParliamentariumBoard({ user }) {
                     ).join(', ')}...
                   </div>
                 </div>
+
+                {/* Persona Image Generation (Gold+ Only) */}
+                {user && ['gold', 'vip', 'enterprise'].includes(user.subscription_tier) && (
+                  <div className="mb-3 border-2 border-green-500/30 rounded-lg p-2 bg-green-900/10">
+                    <label className="text-xs text-green-300 font-medium mb-1 block">
+                      🎨 Generate Custom Image
+                    </label>
+                    <Button
+                      onClick={() => generatePersonaImage(persona.id, persona.name)}
+                      className="w-full text-xs bg-green-600 hover:bg-green-700 h-7"
+                      title="Generate a custom image for this persona that ships with them"
+                    >
+                      ✨ Create Image
+                    </Button>
+                  </div>
+                )}
                 
                 <div className="text-xs text-gray-400 space-y-1">
                   <div>🤖 {persona.llm}</div>
