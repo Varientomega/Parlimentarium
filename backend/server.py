@@ -2348,6 +2348,51 @@ async def get_marketplace_items(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# Add endpoint to get marketplace categories with constraints
+@api_router.get("/marketplace/categories")
+async def get_marketplace_categories():
+    """Get marketplace categories with pricing constraints"""
+    return {"categories": MARKETPLACE_CATEGORIES}
+
+# Add persona image generation endpoint for users
+@api_router.post("/generate-persona-image")
+async def generate_persona_image(
+    request: PersonaImageRequest,
+    current_user: User = Depends(require_subscription(SubscriptionTier.GOLD))
+):
+    """Generate custom image for user personas (Gold+ subscription required)"""
+    try:
+        # Generate image with persona-specific styling
+        image_result = await generate_image(request.prompt, "persona_custom")
+        
+        if image_result["success"]:
+            # Store in user's persona image collection (optional)
+            persona_image = {
+                "id": str(uuid.uuid4()),
+                "user_id": current_user.id,
+                "persona_name": request.persona_name,
+                "prompt": request.prompt,
+                "image_url": image_result["image_url"],
+                "created_at": datetime.utcnow().isoformat()
+            }
+            
+            await db.user_persona_images.insert_one(persona_image)
+            
+            return {
+                "success": True,
+                "image_url": image_result["image_url"],
+                "persona_name": request.persona_name,
+                "prompt": request.prompt
+            }
+        else:
+            return {
+                "success": False,
+                "error": image_result.get("error", "Image generation failed")
+            }
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.post("/marketplace/items")
 async def create_marketplace_item(
     item: MarketplaceItem,
