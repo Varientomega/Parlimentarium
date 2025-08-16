@@ -2355,6 +2355,20 @@ async def create_marketplace_item(
 ):
     """Create marketplace item (Gold+ subscription required)"""
     try:
+        # Validate category exists and price constraints
+        if item.category not in MARKETPLACE_CATEGORIES:
+            raise HTTPException(status_code=400, detail=f"Invalid category. Available: {list(MARKETPLACE_CATEGORIES.keys())}")
+        
+        category_info = MARKETPLACE_CATEGORIES[item.category]
+        min_price = category_info['min_price']
+        max_price = category_info['max_price']
+        
+        if item.price < min_price:
+            raise HTTPException(status_code=400, detail=f"Price must be at least ${min_price} for {category_info['name']}")
+        
+        if max_price and item.price > max_price:
+            raise HTTPException(status_code=400, detail=f"Price cannot exceed ${max_price} for {category_info['name']}")
+        
         item.id = str(uuid.uuid4())
         item.creator_id = current_user.id
         item.created_at = datetime.utcnow()
