@@ -275,37 +275,38 @@ Generated using advanced collective intelligence at Parliamentarium.ai`;
 
               {/* Main Share Buttons */}
               <div className="flex flex-wrap gap-3">
-              <Button
-                onClick={handleCopyToClipboard}
-                className="bg-gray-600 hover:bg-gray-700 text-white"
-              >
-                <Copy className="w-4 h-4 mr-2" />
-                {copied ? 'Copied!' : 'Copy Text'}
-              </Button>
-              
-              <Button
-                onClick={() => handleSocialShare('twitter')}
-                className="bg-blue-500 hover:bg-blue-600 text-white"
-              >
-                <Twitter className="w-4 h-4 mr-2" />
-                Share on Twitter
-              </Button>
-              
-              <Button
-                onClick={() => handleSocialShare('linkedin')}
-                className="bg-blue-700 hover:bg-blue-800 text-white"
-              >
-                <Linkedin className="w-4 h-4 mr-2" />
-                Share on LinkedIn
-              </Button>
-              
-              <Button
-                onClick={() => handleSocialShare('facebook')}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                <Facebook className="w-4 h-4 mr-2" />
-                Share on Facebook
-              </Button>
+                <Button
+                  onClick={handleCopyToClipboard}
+                  className="bg-gray-600 hover:bg-gray-700 text-white"
+                >
+                  <Copy className="w-4 h-4 mr-2" />
+                  {copied ? 'Copied!' : 'Copy Full Text'}
+                </Button>
+                
+                <Button
+                  onClick={() => handleSocialShare('twitter')}
+                  className="bg-blue-500 hover:bg-blue-600 text-white"
+                >
+                  <Twitter className="w-4 h-4 mr-2" />
+                  Share on Twitter
+                </Button>
+                
+                <Button
+                  onClick={() => handleSocialShare('linkedin')}
+                  className="bg-blue-700 hover:bg-blue-800 text-white"
+                >
+                  <Linkedin className="w-4 h-4 mr-2" />
+                  Share on LinkedIn
+                </Button>
+                
+                <Button
+                  onClick={() => handleSocialShare('facebook')}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Facebook className="w-4 h-4 mr-2" />
+                  Share on Facebook
+                </Button>
+              </div>
             </div>
 
             {/* Humble Brag Tips */}
