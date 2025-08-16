@@ -55,7 +55,7 @@ class AuthService:
                 total_dev_users = await self.db.users.count_documents({"is_dev": True})
                 if total_dev_users < 5:
                     user.is_dev = True
-                    user.role = UserRole.DEV
+                    user.role = "dev"
                     user.dev_granted_at = datetime.utcnow()
                     self.dev_user_count += 1
             
