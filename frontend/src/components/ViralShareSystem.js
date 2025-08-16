@@ -67,22 +67,26 @@ If you do any kind of complex analysis where the stakes are high, this might be 
 
       problem_solving: {
         title: `Problem-Solving Breakthrough`,
-        content: `Quick update - I've been stuck on "${topic}" and finally made some progress using a structured approach I discovered.
+        content: `Quick update - I've been stuck on "${topic}" and just experienced something that completely blew my mind.
 
-Turns out there's this AI system that's basically like having a instant advisory board for any decision. You get perspectives from 11 different expert types - everything from a historian who looks at precedent, to a creative who thinks outside the box, to a skeptic who pokes holes in your logic.
+Discovered this AI system that's absolutely insane. It doesn't just give you advice - it generates 12 completely different solutions to your problem, then deploys 11 of the world's most powerful AI systems to scrutinize, debate, and iteratively improve each solution until they reach unanimous consensus on the best path forward.
 
-Applied it to ${solution.substring(0, 85)}... and felt way more confident (${confidence}%) about the direction than my usual "ask 3 people and pick the middle option" strategy.
+Applied it to ${solution.substring(0, 85)}... and felt ${confidence}% confident about the direction, which is unheard of for me on complex decisions.
 
-The interesting thing is it works for pretty much any complex decision where you're worried you're missing something obvious. Career moves, business pivots, hiring decisions, even personal stuff like "should I move cities."
+Think about this: These are superintelligences trained on essentially all human knowledge. They're not just giving opinions - they're generating complete solutions, then debating them like a council of the world's smartest minds until they ALL AGREE. The computational power behind this is staggering.
 
-More info here if you're curious: ${window.location.origin}/showcase/${sessionResult.id}
+It's like having Newton, Darwin, Jobs, and Bezos locked in a room with all human knowledge until they emerge with a unanimous recommendation for your specific problem.
 
-Honestly, if you're someone who overthinks decisions or second-guesses yourself a lot, it's worth the free trial. Beats staring at the ceiling at 2am wondering "what if I'm wrong about this?" 🤔`,
-        hashtags: '#problemsolving #decisions #AI #productivity',
+Details here: ${window.location.origin}/showcase/${sessionResult.id}
+
+Honestly, if you're facing any high-stakes decision where being wrong could be costly (career, business, investments, major life choices), this might be the most valuable hour you could spend. They have a free tier.
+
+Beats my old method of "panic, procrastinate, then guess" by a considerable margin 🤔`,
+        hashtags: '#AI #problemsolving #superintelligence #decisions',
         platform_variants: {
-          twitter: 'Finally solved a problem I was stuck on using AI that gives you 11 expert perspectives instantly. Way better than my usual "panic and procrastinate" method.',
-          linkedin: 'Discovered an AI-powered decision support system that provides comprehensive multi-angle analysis. Particularly valuable for complex strategic decisions with high uncertainty.',
-          casual: 'Been stuck on this problem forever and found this AI that basically gives you a whole team of experts to help think it through. Actually worked!'
+          twitter: 'Mind = blown. Found AI that generates 12 solutions, then has superintelligences debate until unanimous consensus. Most confident I\'ve ever been in a complex decision.',
+          linkedin: 'Breakthrough discovery: AI system where superintelligences iteratively refine solutions until unanimous agreement. Revolutionary confidence levels in strategic decision-making.',
+          casual: 'Holy shit - found AI that generates multiple solutions then has superintelligences argue until they all agree. Like having the smartest people in history solve your problem.'
         }
       }
     };
