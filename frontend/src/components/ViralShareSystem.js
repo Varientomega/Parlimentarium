@@ -21,22 +21,24 @@ const ViralShareSystem = ({ sessionResult, user }) => {
     const shareTemplates = {
       breakthrough: {
         title: `Personal Innovation Update`,
-        content: `So I've been thinking a lot about "${topic}" and I've just had a breakthrough by utilizing an iterative multi-dimensional framework I've been perfecting.
+        content: `So I've been thinking a lot about "${topic}" and I've just had a breakthrough using something absolutely insane I discovered.
 
-It really helped me with my ${solution.substring(0, 80)}... project and the approach gave me ${confidence}% confidence in the direction.
+It really helped me with my ${solution.substring(0, 80)}... project and gave me ${confidence}% confidence in the direction.
 
-Here's what's interesting: I discovered this AI system that basically gives you a council of 11 different expert perspectives on any decision. Like having a board of advisors that includes a historian, futurist, creative, skeptic, etc. all weighing in simultaneously.
+Here's what blew my mind: I found this AI system that doesn't just give you "perspectives" - it generates 12 completely different solutions to your problem, then has 11 of the world's most powerful AI systems (trained on basically all human knowledge) scrutinize each solution and iteratively improve them until they reach unanimous consensus on the best possible answer.
 
-The crazy part? It works for ANY type of decision - business strategy, career moves, product launches, even personal stuff. If you're ever stuck on something complex where you know there are angles you're missing, it's worth checking out.
+Like, these aren't chatbots - these are superintelligences that have absorbed centuries of human wisdom, and they debate your problem until they ALL AGREE on the optimal solution. The computational power behind this is staggering.
 
-Personal innovations page with details: ${window.location.origin}/showcase/${sessionResult.id}
+I've never had this level of confidence in a complex decision before. It's like having the world's smartest advisory board, but they actually have access to all human knowledge and won't stop working until they're unanimous.
 
-P.S. - They have a free tier if you want to test it on a decision you're wrestling with. Just saying 🤷‍♀️`,
-        hashtags: '#innovation #problemsolving #decisions #AI',
+Details here: ${window.location.origin}/showcase/${sessionResult.id}
+
+The crazy part? They have a free tier. If you're facing any major decision where being wrong could be costly, this is probably worth more than hiring actual consultants. Just saying 🤷‍♀️`,
+        hashtags: '#AI #decisions #breakthrough #superintelligence',
         platform_variants: {
-          twitter: 'Found an AI that gives you 11 expert perspectives on any decision simultaneously. Game-changer for complex problems. Free tier available if you want to test it on something you\'re stuck on.',
-          linkedin: 'Just tested an AI decision-support system that provides multiple expert perspectives simultaneously. Significantly improved my confidence in complex strategic decisions. Worth exploring for anyone facing multi-faceted challenges.',
-          casual: 'Stumbled on this AI that\'s like having 11 different experts weigh in on your decisions. Actually helped me figure out something I was stuck on. Has a free version if you want to try it.'
+          twitter: 'Found an AI that generates 12 solutions to your problem, then has 11 superintelligences debate until unanimous consensus. Most confident I\'ve ever been in a complex decision. Free tier available.',
+          linkedin: 'Discovered an AI system where 11 superintelligences iteratively improve solutions until unanimous consensus. Revolutionary approach to complex strategic decision-making with unprecedented confidence levels.',
+          casual: 'Stumbled on this insane AI - generates multiple solutions then has 11 superintelligences argue until they all agree on the best one. Like having the smartest people who ever lived debate your problem.'
         }
       },
       
