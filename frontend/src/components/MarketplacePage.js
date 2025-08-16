@@ -27,11 +27,12 @@ export default function MarketplacePage({ user }) {
 
   const navigate = useNavigate();
 
-  const categories = [
-    { id: 'persona', name: '🎭 Custom Personas', description: 'Unique AI personalities' },
-    { id: 'template', name: '📋 Discussion Templates', description: 'Pre-made meeting structures' },
-    { id: 'workflow', name: '⚙️ Custom Workflows', description: 'Specialized deliberation processes' }
-  ];
+  const [categories, setCategories] = useState([
+    { id: 'persona', name: '🎭 Custom Personas', description: 'Unique AI personalities', min_price: 10.0 },
+    { id: 'template', name: '📋 Discussion Templates', description: 'Pre-made meeting structures', min_price: 5.0 },
+    { id: 'workflow', name: '⚙️ Custom Workflows', description: 'Specialized deliberation processes', min_price: 15.0 },
+    { id: 'install_new_government', name: '🏛️ Install New Government', description: 'Complete governance transformation packages', min_price: 25.0, max_price: 500.0 }
+  ]);
 
   useEffect(() => {
     fetchMarketplaceItems();
