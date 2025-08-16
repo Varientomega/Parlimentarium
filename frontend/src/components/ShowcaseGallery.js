@@ -65,6 +65,54 @@ const ShowcaseGallery = () => {
         timeframe: "1 day ago",
         category: "Investment",
         viral_quote: "This is probably worth more than hiring McKinsey, Goldman, and top VCs combined. Unprecedented decision confidence."
+      },
+      {
+        id: 4,
+        user_name: "Jessica Park",
+        user_title: "Content Creator & Podcaster",
+        decision_topic: "How to create viral content about complex tech topics?",
+        ai_insight: "Generated 12 different content strategies, then 11 AI superintelligences with knowledge of all viral content, psychology, and media debated until consensus on the perfect approach.",
+        result_preview: "Created 5-part podcast series. Got 2.3M downloads, landed 3 major sponsors, built email list of 50K subscribers. Used the transcript and audio output with Kitt for final polish.",
+        confidence_score: 0.93,
+        impact_metric: "2.3M podcast downloads",
+        likes: 1842,
+        shares: 394,
+        views: 24700,
+        timeframe: "3 days ago",
+        category: "Content Creation",
+        viral_quote: "This is insane - I got complete podcast episodes with transcripts and multi-voice audio. Just needed Kitt to polish it. Like having the world's best content team brainstorm for hours."
+      },
+      {
+        id: 5,
+        user_name: "David Martinez",
+        user_title: "YouTube Creator (2.1M subs)",
+        decision_topic: "What video series would grow my channel fastest while staying authentic?",
+        ai_insight: "11 superintelligences analyzed YouTube algorithm, audience psychology, content trends, and my personal brand until unanimous agreement on optimal content strategy.",
+        result_preview: "Launched 'CEO Breakdown' series. 15M views in first month, gained 400K subscribers, secured $2M sponsorship deal. The AI generated full scripts and talking points.",
+        confidence_score: 0.89,
+        impact_metric: "15M views, 400K subs",
+        likes: 3247,
+        shares: 678,
+        views: 41200,
+        timeframe: "1 week ago",
+        category: "Content Creation", 
+        viral_quote: "Holy shit - got complete video scripts, talking points, even podcast versions with different voices discussing my topic. Better than hiring an entire creative team."
+      },
+      {
+        id: 6,
+        user_name: "Emma Thompson",
+        user_title: "Newsletter Writer",
+        decision_topic: "How to transform my struggling newsletter into a must-read publication?",
+        ai_insight: "12 complete newsletter strategies generated, then superintelligences with knowledge of all successful publications, reader psychology, and media business models debated until consensus.",
+        result_preview: "Redesigned format and content strategy. Grew from 2K to 85K subscribers in 4 months, launched premium tier at $29/month with 12% conversion rate.",
+        confidence_score: 0.95,
+        impact_metric: "2K → 85K subscribers",
+        likes: 1576,
+        shares: 289,
+        views: 19800,
+        timeframe: "2 weeks ago",
+        category: "Content Creation",
+        viral_quote: "Got detailed content calendars, engagement strategies, and even sample newsletters. The transcript feature gave me months of content ideas. Like having the world's best editorial team."
       }
     ];
     
