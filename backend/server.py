@@ -2312,6 +2312,14 @@ async def use_referral_code(referral_code: str, current_user: User = Depends(get
     
     return {"message": "Referral code applied successfully"}
 
+# Marketplace categories with pricing constraints
+MARKETPLACE_CATEGORIES = {
+    'persona': {'min_price': 10.0, 'max_price': None, 'name': '🎭 Custom Personas'},
+    'template': {'min_price': 5.0, 'max_price': None, 'name': '📋 Discussion Templates'},  
+    'workflow': {'min_price': 15.0, 'max_price': None, 'name': '⚙️ Custom Workflows'},
+    'install_new_government': {'min_price': 25.0, 'max_price': 500.0, 'name': '🏛️ Install New Government'}
+}
+
 # ============================================================================
 # MARKETPLACE ENDPOINTS (Gold+ Subscription Required)
 # ============================================================================
