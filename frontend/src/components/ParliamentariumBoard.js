@@ -6,6 +6,7 @@ import { Textarea } from "../components/ui/textarea";
 import { Badge } from "../components/ui/badge";
 import { ScrollArea } from "../components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
+import axios from 'axios';
 import { 
   History, Eye, Brain, Palette, Landmark, ScanLine, Wand2, 
   ShieldAlert, Flame, Scale, Shield, Crown, Users, Settings, Upload, X, FileText, ChevronDown
