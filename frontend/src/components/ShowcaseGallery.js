@@ -134,7 +134,7 @@ const ShowcaseGallery = () => {
     }
   };
 
-  const categories = ['all', 'Business Strategy', 'Engineering', 'Investment', 'Personal', 'Research'];
+  const categories = ['all', 'Business Strategy', 'Engineering', 'Investment', 'Content Creation', 'Personal', 'Research'];
 
   const filteredDecisions = filter === 'all' 
     ? featuredDecisions 
