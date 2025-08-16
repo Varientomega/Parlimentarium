@@ -249,7 +249,12 @@ export default function MarketplacePage({ user }) {
                   <label className="block text-sm font-medium text-purple-300 mb-2">Category</label>
                   <select
                     value={newItem.category}
-                    onChange={(e) => setNewItem({...newItem, category: e.target.value})}
+                    onChange={(e) => {
+                      const selectedCategory = e.target.value;
+                      const category = categories.find(c => c.id === selectedCategory);
+                      const minPrice = category ? category.min_price : 5.0;
+                      setNewItem({...newItem, category: selectedCategory, price: Math.max(newItem.price, minPrice)});
+                    }}
                     className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white"
                   >
                     {categories.map(cat => (
