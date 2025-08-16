@@ -21,7 +21,7 @@ export default function MarketplacePage({ user }) {
     title: '',
     description: '',
     category: 'persona',
-    price: 5.0,
+    price: 10.0, // Updated default to meet persona minimum
     content: {}
   });
 
