@@ -275,10 +275,22 @@ export default function MarketplacePage({ user }) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-purple-300 mb-2">Price ($)</label>
+                  <label className="block text-sm font-medium text-purple-300 mb-2">
+                    Price ($)
+                    {(() => {
+                      const category = categories.find(c => c.id === newItem.category);
+                      if (category) {
+                        const minText = `Min: $${category.min_price}`;
+                        const maxText = category.max_price ? ` Max: $${category.max_price}` : '';
+                        return <span className="text-xs text-gray-400 ml-2">({minText}{maxText})</span>;
+                      }
+                      return null;
+                    })()}
+                  </label>
                   <Input
                     type="number"
-                    min="1"
+                    min={categories.find(c => c.id === newItem.category)?.min_price || 1}
+                    max={categories.find(c => c.id === newItem.category)?.max_price || undefined}
                     step="0.50"
                     value={newItem.price}
                     onChange={(e) => setNewItem({...newItem, price: parseFloat(e.target.value)})}
