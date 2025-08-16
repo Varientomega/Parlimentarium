@@ -79,7 +79,7 @@ class AuthService:
                 email=email,
                 referral_code=referral_code,
                 is_dev=is_dev,
-                role=UserRole.DEV if is_dev else UserRole.USER,
+                role="dev" if is_dev else "user",
                 dev_granted_at=datetime.utcnow() if is_dev else None,
                 login_count=1,
                 last_login=datetime.utcnow()
