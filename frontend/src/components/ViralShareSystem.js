@@ -107,7 +107,7 @@ Generated using advanced collective intelligence at Parliamentarium.ai`;
     
     const baseUrl = window.location.origin;
     const shareUrl = `${baseUrl}/showcase/${sessionResult.id}`;
-    const text = encodeURIComponent(`${shareGenerated.title}\n\n${shareContent.content.substring(0, 200)}...`);
+    const text = encodeURIComponent(`${shareGenerated.title}\n\n${shareGenerated.content.substring(0, 200)}...`);
     
     const urls = {
       twitter: `https://twitter.com/intent/tweet?text=${text}&url=${shareUrl}&hashtags=Innovation,DecisionMaking,Strategy`,
