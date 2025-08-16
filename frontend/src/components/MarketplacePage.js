@@ -6,6 +6,11 @@ import { Textarea } from './ui/textarea';
 import { Badge } from './ui/badge';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { 
+  Search, Filter, Plus, ArrowLeft, ShoppingCart, Star, 
+  TrendingUp, Zap, Crown, Settings, Eye, Package,
+  Sparkles, Globe, Users, DollarSign
+} from 'lucide-react';
 
 const API = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
 
@@ -17,6 +22,14 @@ export default function MarketplacePage({ user }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+
+  const [categories, setCategories] = useState([
+    { id: 'persona', name: '🎭 Custom Personas', description: 'Unique AI personalities', min_price: 10.0 },
+    { id: 'template', name: '📋 Discussion Templates', description: 'Pre-made meeting structures', min_price: 5.0 },
+    { id: 'workflow', name: '⚙️ Custom Workflows', description: 'Specialized deliberation processes', min_price: 15.0 },
+    { id: 'install_new_government', name: '🏛️ Install New Government', description: 'Complete governance transformation packages', min_price: 25.0, max_price: 500.0 }
+  ]);
+
   const [newItem, setNewItem] = useState({
     title: '',
     description: '',
@@ -26,13 +39,6 @@ export default function MarketplacePage({ user }) {
   });
 
   const navigate = useNavigate();
-
-  const [categories, setCategories] = useState([
-    { id: 'persona', name: '🎭 Custom Personas', description: 'Unique AI personalities', min_price: 10.0 },
-    { id: 'template', name: '📋 Discussion Templates', description: 'Pre-made meeting structures', min_price: 5.0 },
-    { id: 'workflow', name: '⚙️ Custom Workflows', description: 'Specialized deliberation processes', min_price: 15.0 },
-    { id: 'install_new_government', name: '🏛️ Install New Government', description: 'Complete governance transformation packages', min_price: 25.0, max_price: 500.0 }
-  ]);
 
   useEffect(() => {
     fetchMarketplaceItems();
@@ -108,115 +114,206 @@ export default function MarketplacePage({ user }) {
 
   const canCreateItems = user && ['gold', 'vip', 'enterprise'].includes(user.subscription_tier);
 
+  const getCategoryIcon = (categoryId) => {
+    switch (categoryId) {
+      case 'persona': return '🎭';
+      case 'template': return '📋';
+      case 'workflow': return '⚙️';
+      case 'install_new_government': return '🏛️';
+      default: return '📦';
+    }
+  };
+
+  const getCategoryColor = (categoryId) => {
+    switch (categoryId) {
+      case 'persona': return 'from-purple-500 to-pink-500';
+      case 'template': return 'from-blue-500 to-cyan-500';
+      case 'workflow': return 'from-green-500 to-emerald-500';
+      case 'install_new_government': return 'from-orange-500 to-red-500';
+      default: return 'from-gray-500 to-gray-600';
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-black p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-cyber-dark bg-noise">
+      {/* Animated background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/3 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse-slow"></div>
+        <div className="absolute bottom-0 right-1/3 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-pulse-slow delay-1000"></div>
+      </div>
+
+      <div className="relative z-10 container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent mb-4">
-            🛒 AI Parliament Marketplace
-          </h1>
-          <p className="text-gray-300 text-lg">
-            Discover, create, and trade custom AI personas and workflows
+        <div className="text-center mb-12 animate-fade-in">
+          <div className="inline-flex items-center gap-3 mb-6">
+            <div className="p-3 rounded-2xl glass-panel">
+              <ShoppingCart className="w-8 h-8 text-neon-purple" />
+            </div>
+            <h1 className="text-5xl font-display heading-display">
+              AI Parliament Marketplace
+            </h1>
+            <div className="p-3 rounded-2xl glass-panel">
+              <Sparkles className="w-8 h-8 text-neon-blue" />
+            </div>
+          </div>
+          
+          <p className="text-xl text-muted-foreground mb-4 max-w-3xl mx-auto text-balance">
+            Discover, create, and trade custom AI personas, workflows, and governance systems
           </p>
+
           {!canCreateItems && (
-            <div className="mt-4">
-              <Badge className="bg-yellow-600 text-white">
-                Upgrade to Gold+ to create and sell items
-              </Badge>
+            <div className="inline-flex items-center gap-2 px-4 py-2 glass-panel rounded-full border border-yellow-500/30">
+              <Crown className="w-4 h-4 text-yellow-400" />
+              <span className="text-yellow-300 text-sm">Upgrade to Gold+ to create and sell items</span>
             </div>
           )}
         </div>
 
-        {/* Navigation */}
-        <div className="flex gap-4 mb-6 justify-center">
-          <Button
-            onClick={() => setActiveTab('browse')}
-            variant={activeTab === 'browse' ? 'default' : 'outline'}
-            className={activeTab === 'browse' ? 'bg-purple-600' : 'border-gray-600'}
-          >
-            🛒 Browse
-          </Button>
-          {canCreateItems && (
-            <>
-              <Button
-                onClick={() => setActiveTab('create')}
-                variant={activeTab === 'create' ? 'default' : 'outline'}
-                className={activeTab === 'create' ? 'bg-purple-600' : 'border-gray-600'}
-              >
-                ➕ Create
-              </Button>
-              <Button
-                onClick={() => setActiveTab('my-items')}
-                variant={activeTab === 'my-items' ? 'default' : 'outline'}
-                className={activeTab === 'my-items' ? 'bg-purple-600' : 'border-gray-600'}
-              >
-                📦 My Items
-              </Button>
-            </>
-          )}
+        {/* Navigation Tabs */}
+        <div className="flex justify-center mb-8">
+          <div className="glass-panel rounded-2xl p-1 flex gap-1">
+            <button
+              onClick={() => setActiveTab('browse')}
+              className={`px-6 py-3 rounded-xl font-medium transition-all duration-300 flex items-center gap-2 ${
+                activeTab === 'browse' 
+                  ? 'bg-gradient-to-r from-purple-600 to-cyan-600 text-white shadow-cyber' 
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Globe className="w-4 h-4" />
+              Browse Marketplace
+            </button>
+            {canCreateItems && (
+              <>
+                <button
+                  onClick={() => setActiveTab('create')}
+                  className={`px-6 py-3 rounded-xl font-medium transition-all duration-300 flex items-center gap-2 ${
+                    activeTab === 'create' 
+                      ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-cyber' 
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <Plus className="w-4 h-4" />
+                  Create Item
+                </button>
+                <button
+                  onClick={() => setActiveTab('my-items')}
+                  className={`px-6 py-3 rounded-xl font-medium transition-all duration-300 flex items-center gap-2 ${
+                    activeTab === 'my-items' 
+                      ? 'bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-cyber' 
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <Package className="w-4 h-4" />
+                  My Items
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Browse Tab */}
         {activeTab === 'browse' && (
-          <div>
+          <div className="space-y-8">
             {/* Search and Filter */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <Input
-                placeholder="Search items..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-gray-700 border-gray-600 text-white"
-              />
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white"
-              >
-                <option value="">All Categories</option>
-                {categories.map(cat => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                ))}
-              </select>
+            <div className="flex flex-col lg:flex-row gap-4 max-w-4xl mx-auto">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Input
+                  placeholder="Search personas, templates, workflows..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="cyber-input pl-10 h-12"
+                />
+              </div>
+              <div className="relative">
+                <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="cyber-input pl-10 pr-8 h-12 min-w-48 appearance-none cursor-pointer"
+                >
+                  <option value="">All Categories</option>
+                  {categories.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {/* Items Grid */}
             {isLoading ? (
-              <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto"></div>
-                <p className="text-gray-300 mt-4">Loading marketplace...</p>
+              <div className="text-center py-20">
+                <div className="inline-flex items-center gap-3 glass-panel px-6 py-4 rounded-2xl">
+                  <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-lg">Loading marketplace...</span>
+                </div>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredItems.length === 0 ? (
-                  <div className="col-span-full text-center py-12">
-                    <p className="text-gray-400 text-lg">No items found</p>
-                    <p className="text-gray-500 text-sm mt-2">Try adjusting your search or filters</p>
+                  <div className="col-span-full text-center py-20">
+                    <div className="glass-panel rounded-3xl p-12 max-w-md mx-auto">
+                      <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-xl font-semibold mb-2">No items found</h3>
+                      <p className="text-gray-400">Try adjusting your search or filters</p>
+                    </div>
                   </div>
                 ) : (
-                  filteredItems.map(item => (
-                    <Card key={item.id} className="bg-gray-800/50 border-gray-600 hover:border-purple-500/50 transition-colors">
-                      <CardHeader>
-                        <div className="flex justify-between items-start">
-                          <CardTitle className="text-lg">{item.title}</CardTitle>
-                          <Badge className={`${item.category === 'persona' ? 'bg-purple-600' : item.category === 'template' ? 'bg-blue-600' : 'bg-green-600'}`}>
-                            {categories.find(c => c.id === item.category)?.name?.split(' ')[0] || item.category}
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-gray-300 text-sm mb-4">{item.description}</p>
-                        <div className="flex justify-between items-center">
-                          <div className="text-green-400 font-bold">${item.price}</div>
-                          <div className="text-xs text-gray-500">
-                            ⭐ {item.rating?.toFixed(1) || '0.0'} • {item.sales_count} sales
+                  filteredItems.map((item, index) => (
+                    <Card 
+                      key={item.id} 
+                      className="cyber-card group hover-lift animate-scale-in"
+                      style={{ animationDelay: `${index * 0.1}s` }}
+                    >
+                      <CardHeader className="pb-4">
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className={`p-2 rounded-xl bg-gradient-to-r ${getCategoryColor(item.category)} text-white shadow-neon`}>
+                              <span className="text-lg">{getCategoryIcon(item.category)}</span>
+                            </div>
+                            <div>
+                              <CardTitle className="text-lg font-bold">{item.title}</CardTitle>
+                              <Badge className={`text-xs bg-gradient-to-r ${getCategoryColor(item.category)} text-white border-0`}>
+                                {categories.find(c => c.id === item.category)?.name?.split(' ')[1] || item.category}
+                              </Badge>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 text-xs text-yellow-400">
+                            <Star className="w-3 h-3 fill-current" />
+                            <span>{item.rating?.toFixed(1) || '0.0'}</span>
                           </div>
                         </div>
+                      </CardHeader>
+                      
+                      <CardContent className="space-y-4">
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          {item.description}
+                        </p>
+                        
+                        <div className="flex items-center justify-between p-3 glass-panel rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <DollarSign className="w-4 h-4 text-green-400" />
+                            <span className="text-xl font-bold text-green-400">${item.price}</span>
+                          </div>
+                          <div className="flex items-center gap-3 text-xs text-gray-400">
+                            <div className="flex items-center gap-1">
+                              <TrendingUp className="w-3 h-3" />
+                              <span>{item.sales_count || 0} sales</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Eye className="w-3 h-3" />
+                              <span>{item.views || 0}</span>
+                            </div>
+                          </div>
+                        </div>
+                        
                         <Button 
-                          className="w-full mt-4 bg-purple-600 hover:bg-purple-700"
+                          className="w-full bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white font-semibold py-3 rounded-xl shadow-cyber hover-lift"
                           onClick={() => alert('Purchase functionality coming soon!')}
                         >
-                          🛒 Purchase
+                          <ShoppingCart className="w-4 h-4 mr-2" />
+                          Purchase Now
                         </Button>
                       </CardContent>
                     </Card>
@@ -230,23 +327,35 @@ export default function MarketplacePage({ user }) {
         {/* Create Tab */}
         {activeTab === 'create' && canCreateItems && (
           <div className="max-w-2xl mx-auto">
-            <Card className="bg-gray-800/50 border-purple-500/30">
-              <CardHeader>
-                <CardTitle>➕ Create New Marketplace Item</CardTitle>
+            <Card className="cyber-card border-2 border-green-500/20 shadow-cyber">
+              <CardHeader className="text-center">
+                <CardTitle className="text-2xl font-display flex items-center justify-center gap-3">
+                  <Plus className="w-6 h-6 text-green-400" />
+                  Create New Marketplace Item
+                  <Sparkles className="w-6 h-6 text-cyan-400" />
+                </CardTitle>
+                <p className="text-muted-foreground">Share your AI creations with the community</p>
               </CardHeader>
-              <CardContent className="space-y-4">
+              
+              <CardContent className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-purple-300 mb-2">Title</label>
+                  <label className="block text-sm font-medium text-purple-300 mb-2 flex items-center gap-2">
+                    <Zap className="w-4 h-4" />
+                    Item Title
+                  </label>
                   <Input
                     value={newItem.title}
                     onChange={(e) => setNewItem({...newItem, title: e.target.value})}
-                    placeholder="Enter item title"
-                    className="bg-gray-700 border-gray-600 text-white"
+                    placeholder="Enter a compelling title for your item"
+                    className="cyber-input h-12"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-purple-300 mb-2">Category</label>
+                  <label className="block text-sm font-medium text-cyan-300 mb-2 flex items-center gap-2">
+                    <Filter className="w-4 h-4" />
+                    Category
+                  </label>
                   <select
                     value={newItem.category}
                     onChange={(e) => {
@@ -255,7 +364,7 @@ export default function MarketplacePage({ user }) {
                       const minPrice = category ? category.min_price : 5.0;
                       setNewItem({...newItem, category: selectedCategory, price: Math.max(newItem.price, minPrice)});
                     }}
-                    className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white"
+                    className="w-full cyber-input h-12 appearance-none cursor-pointer"
                   >
                     {categories.map(cat => (
                       <option key={cat.id} value={cat.id}>{cat.name}</option>
@@ -264,28 +373,36 @@ export default function MarketplacePage({ user }) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-purple-300 mb-2">Description</label>
+                  <label className="block text-sm font-medium text-green-300 mb-2 flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    Description
+                  </label>
                   <Textarea
                     value={newItem.description}
                     onChange={(e) => setNewItem({...newItem, description: e.target.value})}
-                    placeholder="Describe your item..."
-                    className="bg-gray-700 border-gray-600 text-white"
+                    placeholder="Describe your item's features, benefits, and use cases..."
+                    className="cyber-input resize-none"
                     rows={4}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-purple-300 mb-2">
-                    Price ($)
-                    {(() => {
-                      const category = categories.find(c => c.id === newItem.category);
-                      if (category) {
-                        const minText = `Min: $${category.min_price}`;
-                        const maxText = category.max_price ? ` Max: $${category.max_price}` : '';
-                        return <span className="text-xs text-gray-400 ml-2">({minText}{maxText})</span>;
-                      }
-                      return null;
-                    })()}
+                  <label className="block text-sm font-medium text-orange-300 mb-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="w-4 h-4" />
+                        Price (USD)
+                      </div>
+                      {(() => {
+                        const category = categories.find(c => c.id === newItem.category);
+                        if (category) {
+                          const minText = `Min: $${category.min_price}`;
+                          const maxText = category.max_price ? ` • Max: $${category.max_price}` : '';
+                          return <span className="text-xs text-gray-400">({minText}{maxText})</span>;
+                        }
+                        return null;
+                      })()}
+                    </div>
                   </label>
                   <Input
                     type="number"
@@ -294,16 +411,26 @@ export default function MarketplacePage({ user }) {
                     step="0.50"
                     value={newItem.price}
                     onChange={(e) => setNewItem({...newItem, price: parseFloat(e.target.value)})}
-                    className="bg-gray-700 border-gray-600 text-white"
+                    className="cyber-input h-12"
                   />
                 </div>
 
                 <Button
                   onClick={handleCreateItem}
                   disabled={isCreating || !newItem.title || !newItem.description}
-                  className="w-full bg-purple-600 hover:bg-purple-700"
+                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 rounded-xl shadow-cyber hover-lift"
                 >
-                  {isCreating ? 'Creating...' : '🚀 Create Item'}
+                  {isCreating ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border border-white border-t-transparent rounded-full animate-spin"></div>
+                      Creating Item...
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-5 h-5" />
+                      Create & Publish Item
+                    </div>
+                  )}
                 </Button>
               </CardContent>
             </Card>
@@ -315,40 +442,77 @@ export default function MarketplacePage({ user }) {
           <div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {myItems.length === 0 ? (
-                <div className="col-span-full text-center py-12">
-                  <p className="text-gray-400 text-lg">You haven't created any items yet</p>
-                  <Button
-                    onClick={() => setActiveTab('create')}
-                    className="mt-4 bg-purple-600 hover:bg-purple-700"
-                  >
-                    Create Your First Item
-                  </Button>
+                <div className="col-span-full text-center py-20">
+                  <div className="glass-panel rounded-3xl p-12 max-w-md mx-auto">
+                    <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold mb-2">No items created yet</h3>
+                    <p className="text-gray-400 mb-6">Start creating and selling your AI innovations</p>
+                    <Button
+                      onClick={() => setActiveTab('create')}
+                      className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold px-6 py-3 rounded-xl shadow-cyber"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create Your First Item
+                    </Button>
+                  </div>
                 </div>
               ) : (
-                myItems.map(item => (
-                  <Card key={item.id} className="bg-gray-800/50 border-green-500/30">
-                    <CardHeader>
+                myItems.map((item, index) => (
+                  <Card 
+                    key={item.id} 
+                    className="cyber-card border-2 border-green-500/20 hover-lift animate-scale-in"
+                    style={{ animationDelay: `${index * 0.1}s` }}
+                  >
+                    <CardHeader className="pb-4">
                       <div className="flex justify-between items-start">
-                        <CardTitle className="text-lg">{item.title}</CardTitle>
-                        <Badge className={item.is_active ? 'bg-green-600' : 'bg-gray-600'}>
-                          {item.is_active ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-gray-300 text-sm mb-4">{item.description}</p>
-                      <div className="flex justify-between items-center mb-4">
-                        <div className="text-green-400 font-bold">${item.price}</div>
-                        <div className="text-xs text-gray-500">
-                          ⭐ {item.rating?.toFixed(1) || '0.0'} • {item.sales_count} sales
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-xl bg-gradient-to-r ${getCategoryColor(item.category)} text-white`}>
+                            <span className="text-lg">{getCategoryIcon(item.category)}</span>
+                          </div>
+                          <div>
+                            <CardTitle className="text-lg font-bold">{item.title}</CardTitle>
+                            <Badge className={item.is_active ? 'bg-green-600 text-white' : 'bg-gray-600 text-white'}>
+                              {item.is_active ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </div>
                         </div>
                       </div>
+                    </CardHeader>
+                    
+                    <CardContent className="space-y-4">
+                      <p className="text-sm text-muted-foreground">{item.description}</p>
+                      
+                      <div className="flex items-center justify-between p-3 glass-panel rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <DollarSign className="w-4 h-4 text-green-400" />
+                          <span className="text-lg font-bold text-green-400">${item.price}</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-gray-400">
+                          <div className="flex items-center gap-1">
+                            <Star className="w-3 h-3" />
+                            <span>{item.rating?.toFixed(1) || '0.0'}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <TrendingUp className="w-3 h-3" />
+                            <span>{item.sales_count || 0} sales</span>
+                          </div>
+                        </div>
+                      </div>
+                      
                       <div className="flex gap-2">
-                        <Button size="sm" className="flex-1 bg-blue-600 hover:bg-blue-700">
-                          📝 Edit
+                        <Button 
+                          size="sm" 
+                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                        >
+                          <Settings className="w-4 h-4 mr-1" />
+                          Edit
                         </Button>
-                        <Button size="sm" className="flex-1 bg-gray-600 hover:bg-gray-700">
-                          📊 Stats
+                        <Button 
+                          size="sm" 
+                          className="flex-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg"
+                        >
+                          <TrendingUp className="w-4 h-4 mr-1" />
+                          Analytics
                         </Button>
                       </div>
                     </CardContent>
@@ -360,13 +524,14 @@ export default function MarketplacePage({ user }) {
         )}
 
         {/* Back Button */}
-        <div className="text-center mt-12">
+        <div className="text-center mt-16">
           <Button
             onClick={() => navigate('/')}
             variant="outline"
-            className="border-purple-500 text-purple-300 hover:bg-purple-800"
+            className="glass-button border-purple-500/30 text-purple-300 hover:border-purple-500 px-8 py-3 rounded-xl"
           >
-            ← Back to Parliament
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Parliament
           </Button>
         </div>
       </div>
