@@ -25,16 +25,18 @@ const ViralShareSystem = ({ sessionResult, user }) => {
 
 It really helped me with my ${solution.substring(0, 80)}... project and the approach gave me ${confidence}% confidence in the direction.
 
-The key insight was getting perspectives from multiple angles - historical, creative, analytical, and practical viewpoints simultaneously before making the final call.
+Here's what's interesting: I discovered this AI system that basically gives you a council of 11 different expert perspectives on any decision. Like having a board of advisors that includes a historian, futurist, creative, skeptic, etc. all weighing in simultaneously.
 
-I would really appreciate some feedback about this approach. You can find the full breakdown on my personal innovations page: ${window.location.origin}/showcase/${sessionResult.id}
+The crazy part? It works for ANY type of decision - business strategy, career moves, product launches, even personal stuff. If you're ever stuck on something complex where you know there are angles you're missing, it's worth checking out.
 
-Thanks! 🙏`,
-        hashtags: '#innovation #problemsolving #feedback #breakthrough',
+Personal innovations page with details: ${window.location.origin}/showcase/${sessionResult.id}
+
+P.S. - They have a free tier if you want to test it on a decision you're wrestling with. Just saying 🤷‍♀️`,
+        hashtags: '#innovation #problemsolving #decisions #AI',
         platform_variants: {
-          twitter: 'Just had a breakthrough on a complex challenge using an iterative multi-dimensional framework I\'ve been working on. Really helped with decision confidence. Would love feedback!',
-          linkedin: 'I\'ve been working on a new decision-making framework and just had a breakthrough applying it to a real challenge. The multi-perspective approach significantly improved my confidence in the outcome. Would appreciate thoughts from the community.',
-          casual: 'Been struggling with this problem and finally cracked it using a framework I developed. Pretty excited about the results - would love to get some feedback!'
+          twitter: 'Found an AI that gives you 11 expert perspectives on any decision simultaneously. Game-changer for complex problems. Free tier available if you want to test it on something you\'re stuck on.',
+          linkedin: 'Just tested an AI decision-support system that provides multiple expert perspectives simultaneously. Significantly improved my confidence in complex strategic decisions. Worth exploring for anyone facing multi-faceted challenges.',
+          casual: 'Stumbled on this AI that\'s like having 11 different experts weigh in on your decisions. Actually helped me figure out something I was stuck on. Has a free version if you want to try it.'
         }
       },
       
