@@ -299,7 +299,16 @@ class UsageAnalytics:
             
         # Simple engagement calculation based on event frequency and recency
         total_events = len(events)
-        recent_events = sum(1 for e in events if datetime.fromisoformat(e["timestamp"]) if isinstance(e["timestamp"], str) else e["timestamp"] > datetime.utcnow() - timedelta(days=7))
+        recent_events = 0
+        cutoff_date = datetime.utcnow() - timedelta(days=7)
+        
+        for e in events:
+            if isinstance(e["timestamp"], str):
+                event_time = datetime.fromisoformat(e["timestamp"])
+            else:
+                event_time = e["timestamp"]
+            if event_time > cutoff_date:
+                recent_events += 1
         
         engagement_score = min((recent_events / max(total_events, 1)) * 2, 1.0)
         
