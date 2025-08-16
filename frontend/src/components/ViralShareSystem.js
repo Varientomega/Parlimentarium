@@ -11,7 +11,7 @@ const ViralShareSystem = ({ sessionResult, user }) => {
   const [shareGenerated, setShareGenerated] = useState(null);
   const [copied, setCopied] = useState(false);
 
-  // Generate user-centric sharing content
+  // Generate authentic, humble sharing content
   const generateShareContent = (style = 'breakthrough') => {
     const userName = user.username || user.email.split('@')[0];
     const topic = sessionResult.topic;
@@ -20,52 +20,60 @@ const ViralShareSystem = ({ sessionResult, user }) => {
     
     const shareTemplates = {
       breakthrough: {
-        title: `🧠 ${userName}'s Breakthrough Decision Framework`,
-        subtitle: `How I Solved: "${topic}"`,
-        content: `After analyzing this complex challenge, here's the strategic approach I developed:
+        title: `Personal Innovation Update`,
+        content: `So I've been thinking a lot about "${topic}" and I've just had a breakthrough by utilizing an iterative multi-dimensional framework I've been perfecting.
 
-💡 **My Key Insight**: ${solution.substring(0, 120)}...
+It really helped me with my ${solution.substring(0, 80)}... project and the approach gave me ${confidence}% confidence in the direction.
 
-📊 **Decision Confidence**: ${confidence}% (validated by collective intelligence)
+The key insight was getting perspectives from multiple angles - historical, creative, analytical, and practical viewpoints simultaneously before making the final call.
 
-🎯 **Framework Used**: Multi-perspective analysis with 11 specialized viewpoints
+I would really appreciate some feedback about this approach. You can find the full breakdown on my personal innovations page: ${window.location.origin}/showcase/${sessionResult.id}
 
-This approach helped me see angles I initially missed. Sharing in case it helps others facing similar decisions.`,
-        hashtags: '#DecisionMaking #Strategy #Leadership #Innovation',
-        cta: '↓ See the full framework breakdown'
+Thanks! 🙏`,
+        hashtags: '#innovation #problemsolving #feedback #breakthrough',
+        platform_variants: {
+          twitter: 'Just had a breakthrough on a complex challenge using an iterative multi-dimensional framework I\'ve been working on. Really helped with decision confidence. Would love feedback!',
+          linkedin: 'I\'ve been working on a new decision-making framework and just had a breakthrough applying it to a real challenge. The multi-perspective approach significantly improved my confidence in the outcome. Would appreciate thoughts from the community.',
+          casual: 'Been struggling with this problem and finally cracked it using a framework I developed. Pretty excited about the results - would love to get some feedback!'
+        }
       },
       
-      innovation: {
-        title: `⚡ Innovation Alert: ${userName}'s Latest Problem-Solving Method`,
-        subtitle: `Tackling: "${topic}"`,
-        content: `Just pioneered a new approach to this challenge and the results exceeded expectations:
+      research: {
+        title: `Research Methodology Share`,
+        content: `I've been researching "${topic}" for a while and developed this systematic approach that's been really effective.
 
-🎯 **The Challenge**: ${topic}
-🔥 **My Solution**: ${solution.substring(0, 100)}...
-📈 **Outcome Confidence**: ${confidence}%
+The breakthrough came from combining different analytical perspectives into what I'm calling an "iterative multi-dimensional framework" - basically getting input from historical, creative, analytical, and practical viewpoints before synthesizing the final approach.
 
-The key was using multi-dimensional analysis - getting perspectives from historical, creative, analytical, and practical viewpoints simultaneously.
+Just applied it to ${solution.substring(0, 90)}... and got ${confidence}% confidence in the methodology.
 
-Sharing this methodology in case other innovators find it useful.`,
-        hashtags: '#Innovation #ProblemSolving #Strategy #Breakthrough',
-        cta: '👇 Full methodology details below'
+Still refining the process, so would really value any feedback or thoughts. Full details on my research page: ${window.location.origin}/showcase/${sessionResult.id}
+
+Always learning! 📚`,
+        hashtags: '#research #methodology #feedback #learning',
+        platform_variants: {
+          twitter: 'Developed a new research methodology for complex problems. Just tested it and got promising results. Would love academic feedback!',
+          linkedin: 'Sharing a systematic approach I\'ve developed for complex problem analysis. Early results are encouraging - would appreciate peer review.',
+          casual: 'Been working on this research approach and finally got some solid results. Would love to hear what others think!'
+        }
       },
-      
-      leadership: {
-        title: `👑 Leadership Insight from ${userName}`,
-        subtitle: `Strategic Decision: "${topic}"`,
-        content: `As leaders, we face complex decisions daily. Here's how I approached a recent challenge:
 
-🎯 **The Situation**: ${topic}
-🧠 **My Strategic Process**: Applied multi-perspective decision analysis
-💎 **The Solution**: ${solution.substring(0, 110)}...
-✅ **Confidence Level**: ${confidence}% (peer-validated)
+      problem_solving: {
+        title: `Problem-Solving Breakthrough`,
+        content: `Quick update - I've been stuck on "${topic}" and finally made some progress using a structured approach I've been developing.
 
-The breakthrough came from systematically gathering diverse viewpoints before deciding. 
+The method involves getting multiple perspectives (historical precedent, creative solutions, analytical breakdown, practical considerations) before making decisions. Kind of like having a diverse advisory board for every challenge.
 
-Sharing this approach to help fellow leaders make better decisions.`,
-        hashtags: '#Leadership #DecisionMaking #Strategy #Management',
-        cta: '📖 Full decision breakdown below'
+Applied it to ${solution.substring(0, 85)}... and felt much more confident (${confidence}%) about the direction than my usual gut-check approach.
+
+Still testing this framework, so would genuinely appreciate any thoughts or experiences with similar approaches. More details: ${window.location.origin}/showcase/${sessionResult.id}
+
+Thanks for reading! 🤔`,
+        hashtags: '#problemsolving #methodology #feedback #growth',
+        platform_variants: {
+          twitter: 'Finally solved a problem I was stuck on using a multi-perspective framework I developed. Much higher confidence than usual gut decisions!',
+          linkedin: 'Sharing a systematic problem-solving approach that\'s been giving me better decision confidence. Would welcome thoughts from the community.',
+          casual: 'Cracked a tough problem using this new approach I\'ve been trying. Actually feel confident about the solution for once!'
+        }
       }
     };
 
