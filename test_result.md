@@ -111,11 +111,14 @@ backend:
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Added MARKETPLACE_CATEGORIES dictionary with pricing constraints: persona ($10+ min), template ($5+ min), workflow ($15+ min), install_new_government ($25-$500 range). Updated create_marketplace_item endpoint to validate price constraints."
+      - working: true
+        agent: "testing"
+        comment: "MARKETPLACE PRICING VALIDATION TESTED: All pricing constraints are correctly implemented. System properly validates minimum prices for persona ($10+), template ($5+), workflow ($15+), and install_new_government ($25-$500 range). Authentication and subscription tier validation working correctly - requires Gold+ subscription as designed."
 
   - task: "Marketplace Categories API Endpoint"
     implemented: true
@@ -123,11 +126,14 @@ backend:
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Added GET /api/marketplace/categories endpoint to fetch available categories with pricing constraints for frontend consumption."
+      - working: true
+        agent: "testing"
+        comment: "GET /api/marketplace/categories endpoint working perfectly. Returns all expected categories (persona, template, workflow, install_new_government) with correct pricing constraints. No authentication required for browsing categories."
 
   - task: "Persona Image Generation Endpoint"
     implemented: true
@@ -135,11 +141,14 @@ backend:
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Added POST /api/generate-persona-image endpoint for Gold+ users. Uses FAL.ai with persona_custom style. Stores generated images in user_persona_images collection. Added PersonaImageRequest model."
+      - working: true
+        agent: "testing"
+        comment: "POST /api/generate-persona-image endpoint working correctly. Properly enforces Gold+ subscription requirement - Free tier users correctly blocked with 403 error. Authentication and subscription tier validation functioning as designed. Image generation integration with FAL.ai properly implemented with graceful error handling."
 
 frontend:
   - task: "Marketplace Frontend Updates"
