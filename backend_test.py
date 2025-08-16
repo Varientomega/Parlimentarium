@@ -1034,6 +1034,15 @@ class ParliamentaryTester:
             print(f"Image Tests: {len(image_tests)}")
             print(f"Image Passed: {image_passed}")
             print(f"Image Success Rate: {(image_passed/len(image_tests))*100:.1f}%")
+        
+        # Specific Marketplace Summary
+        marketplace_tests = [r for r in self.test_results if 'Marketplace' in r['test'] or 'Persona Image Generation' in r['test']]
+        if marketplace_tests:
+            print(f"\n🛒 MARKETPLACE TESTS:")
+            marketplace_passed = sum(1 for r in marketplace_tests if r['success'])
+            print(f"Marketplace Tests: {len(marketplace_tests)}")
+            print(f"Marketplace Passed: {marketplace_passed}")
+            print(f"Marketplace Success Rate: {(marketplace_passed/len(marketplace_tests))*100:.1f}%")
                     
         return passed == total
 
