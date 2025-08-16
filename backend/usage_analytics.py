@@ -276,7 +276,13 @@ class UsageAnalytics:
         event_frequency = Counter(event_types)
         
         # Time-based analysis
-        hours = [datetime.fromisoformat(e["timestamp"]).hour if isinstance(e["timestamp"], str) else e["timestamp"].hour for e in events]
+        hours = []
+        for e in events:
+            if isinstance(e["timestamp"], str):
+                dt = datetime.fromisoformat(e["timestamp"])
+            else:
+                dt = e["timestamp"]
+            hours.append(dt.hour)
         peak_hours = Counter(hours)
         
         return {
