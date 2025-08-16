@@ -12,6 +12,8 @@ import {
   ShieldAlert, Flame, Scale, Shield, Crown, Users, Settings, Upload, X, FileText, ChevronDown
 } from "lucide-react";
 
+const API = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+
 export default function ParliamentariumBoard({ user }) {
   const [newTopic, setNewTopic] = useState("");
   const [topicDescription, setTopicDescription] = useState("");
