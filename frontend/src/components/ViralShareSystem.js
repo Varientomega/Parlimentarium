@@ -63,20 +63,22 @@ Worth trying if you ever find yourself making big decisions with incomplete info
 
       problem_solving: {
         title: `Problem-Solving Breakthrough`,
-        content: `Quick update - I've been stuck on "${topic}" and finally made some progress using a structured approach I've been developing.
+        content: `Quick update - I've been stuck on "${topic}" and finally made some progress using a structured approach I discovered.
 
-The method involves getting multiple perspectives (historical precedent, creative solutions, analytical breakdown, practical considerations) before making decisions. Kind of like having a diverse advisory board for every challenge.
+Turns out there's this AI system that's basically like having a instant advisory board for any decision. You get perspectives from 11 different expert types - everything from a historian who looks at precedent, to a creative who thinks outside the box, to a skeptic who pokes holes in your logic.
 
-Applied it to ${solution.substring(0, 85)}... and felt much more confident (${confidence}%) about the direction than my usual gut-check approach.
+Applied it to ${solution.substring(0, 85)}... and felt way more confident (${confidence}%) about the direction than my usual "ask 3 people and pick the middle option" strategy.
 
-Still testing this framework, so would genuinely appreciate any thoughts or experiences with similar approaches. More details: ${window.location.origin}/showcase/${sessionResult.id}
+The interesting thing is it works for pretty much any complex decision where you're worried you're missing something obvious. Career moves, business pivots, hiring decisions, even personal stuff like "should I move cities."
 
-Thanks for reading! 🤔`,
-        hashtags: '#problemsolving #methodology #feedback #growth',
+More info here if you're curious: ${window.location.origin}/showcase/${sessionResult.id}
+
+Honestly, if you're someone who overthinks decisions or second-guesses yourself a lot, it's worth the free trial. Beats staring at the ceiling at 2am wondering "what if I'm wrong about this?" 🤔`,
+        hashtags: '#problemsolving #decisions #AI #productivity',
         platform_variants: {
-          twitter: 'Finally solved a problem I was stuck on using a multi-perspective framework I developed. Much higher confidence than usual gut decisions!',
-          linkedin: 'Sharing a systematic problem-solving approach that\'s been giving me better decision confidence. Would welcome thoughts from the community.',
-          casual: 'Cracked a tough problem using this new approach I\'ve been trying. Actually feel confident about the solution for once!'
+          twitter: 'Finally solved a problem I was stuck on using AI that gives you 11 expert perspectives instantly. Way better than my usual "panic and procrastinate" method.',
+          linkedin: 'Discovered an AI-powered decision support system that provides comprehensive multi-angle analysis. Particularly valuable for complex strategic decisions with high uncertainty.',
+          casual: 'Been stuck on this problem forever and found this AI that basically gives you a whole team of experts to help think it through. Actually worked!'
         }
       }
     };
