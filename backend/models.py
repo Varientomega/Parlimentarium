@@ -117,3 +117,7 @@ class DevDashboardMetrics(BaseModel):
     system_health: Dict[str, Any]
     error_rate: float
     response_time_avg: float
+
+class PersonaImageRequest(BaseModel):
+    persona_name: str
+    prompt: str
