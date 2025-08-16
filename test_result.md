@@ -182,12 +182,7 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus:
-    - "Marketplace Category Enhancement"
-    - "Marketplace Categories API Endpoint"
-    - "Persona Image Generation Endpoint"
-    - "Marketplace Frontend Updates"
-    - "Persona Image Generation UI"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
