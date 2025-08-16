@@ -102,7 +102,90 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Test the mystical parliamentary backend system that implements a sophisticated 4-phase deliberation process with 11 personas using OpenRouter and Gemini APIs for LLM integration."
+user_problem_statement: "Implement marketplace enhancements: add 'install new government' category ($25-$500), set minimum prices for all categories, add persona image generation for Gold+ users, and add hover 'undo' tooltips for content generation functionality."
+
+backend:
+  - task: "Marketplace Category Enhancement"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Added MARKETPLACE_CATEGORIES dictionary with pricing constraints: persona ($10+ min), template ($5+ min), workflow ($15+ min), install_new_government ($25-$500 range). Updated create_marketplace_item endpoint to validate price constraints."
+
+  - task: "Marketplace Categories API Endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Added GET /api/marketplace/categories endpoint to fetch available categories with pricing constraints for frontend consumption."
+
+  - task: "Persona Image Generation Endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Added POST /api/generate-persona-image endpoint for Gold+ users. Uses FAL.ai with persona_custom style. Stores generated images in user_persona_images collection. Added PersonaImageRequest model."
+
+frontend:
+  - task: "Marketplace Frontend Updates"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/components/MarketplacePage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Updated marketplace categories to include install_new_government with $25-$500 range. Added dynamic price validation with min/max constraints display. Updated default prices for each category."
+
+  - task: "Persona Image Generation UI"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/components/ParliamentariumBoard.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Added persona image generation UI for Gold+ users. Includes loading states, subscription tier validation, and API integration. Added hover tooltip with undo explanation for parliament convene button."
+
+metadata:
+  created_by: "main_agent"
+  version: "2.0"
+  test_sequence: 0
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Marketplace Category Enhancement"
+    - "Marketplace Categories API Endpoint"
+    - "Persona Image Generation Endpoint"
+    - "Marketplace Frontend Updates"
+    - "Persona Image Generation UI"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: "MARKETPLACE ENHANCEMENT IMPLEMENTATION COMPLETE: Added 'install new government' category with $25-$500 price range, implemented minimum price constraints for all categories (persona: $10+, template: $5+, workflow: $15+), added persona image generation for Gold+ subscribers with FAL.ai integration, and included hover 'undo' tooltip for content generation. Ready for backend testing of new marketplace and image generation endpoints."
 
 backend:
   - task: "Meeting Creation API"
