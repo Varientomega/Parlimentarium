@@ -2189,6 +2189,27 @@ async def login(request: LoginRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.post("/auth/register")
+async def register(request: LoginRequest):
+    """Register new user (same logic as login - auto-creates if doesn't exist)"""
+    try:
+        user = await auth_service.authenticate_user(request.email)
+        if not user:
+            raise HTTPException(status_code=401, detail="Registration failed")
+        
+        # Create JWT token
+        token_data = {"sub": user.email, "user_id": user.id}
+        access_token = auth_service.create_access_token(token_data)
+        
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": user.dict(),
+            "message": "Account created! " + ("Dev access granted!" if user.is_dev and user.dev_granted_at else "Welcome!")
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.get("/auth/me")
 async def get_current_user_info(current_user: User = Depends(get_current_user)):
     """Get current user information"""
