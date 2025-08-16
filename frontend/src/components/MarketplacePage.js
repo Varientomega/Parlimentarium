@@ -81,7 +81,14 @@ export default function MarketplacePage({ user }) {
       });
 
       alert('Item created successfully!');
-      setNewItem({ title: '', description: '', category: 'persona', price: 5.0, content: {} });
+      const defaultPrices = { persona: 10.0, template: 5.0, workflow: 15.0, install_new_government: 25.0 };
+      setNewItem({ 
+        title: '', 
+        description: '', 
+        category: 'persona', 
+        price: defaultPrices.persona, 
+        content: {} 
+      });
       fetchMyItems();
       setActiveTab('my-items');
     } catch (error) {
