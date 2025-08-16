@@ -59,10 +59,7 @@ function App() {
               <button onClick={() => window.location.href = '/dev-dashboard'} className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg text-sm">🛠️ Dev</button>
             )}
             {['gold', 'vip', 'enterprise'].includes(user.subscription_tier) && (
-              <>
-                <button onClick={() => window.location.href = '/marketplace'} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm">🛒 Market</button>
-                <button onClick={() => window.location.href = '/persona-studio'} className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm">🎭 Studio</button>
-              </>
+              <button onClick={() => window.location.href = '/marketplace'} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm">🛒 Market</button>
             )}
             <button onClick={() => window.location.href = '/subscription'} className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-2 rounded-lg text-sm">💎 Upgrade</button>
             <button onClick={handleLogout} className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm">Logout</button>
