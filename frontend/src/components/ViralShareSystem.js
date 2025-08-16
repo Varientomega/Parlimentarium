@@ -250,7 +250,31 @@ Generated using advanced collective intelligence at Parliamentarium.ai`;
             </div>
 
             {/* Share Actions */}
-            <div className="flex flex-wrap gap-3">
+            <div className="space-y-4">
+              {/* Platform-Specific Variants */}
+              <div className="space-y-2">
+                <h4 className="font-semibold text-sm text-cyan-300">Platform-Optimized Versions:</h4>
+                <div className="space-y-2">
+                  {shareGenerated.platform_variants && Object.entries(shareGenerated.platform_variants).map(([platform, text]) => (
+                    <div key={platform} className="glass-panel rounded p-3 border border-gray-600">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-medium text-blue-300 capitalize">{platform}</span>
+                        <Button
+                          size="sm"
+                          onClick={() => navigator.clipboard.writeText(text)}
+                          className="text-xs bg-gray-600 hover:bg-gray-700"
+                        >
+                          Copy
+                        </Button>
+                      </div>
+                      <p className="text-xs text-gray-300">{text}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Main Share Buttons */}
+              <div className="flex flex-wrap gap-3">
               <Button
                 onClick={handleCopyToClipboard}
                 className="bg-gray-600 hover:bg-gray-700 text-white"
