@@ -7,7 +7,7 @@ import DevDashboard from './components/DevDashboard';
 import SubscriptionPage from './components/SubscriptionPage';
 import MarketplacePage from './components/MarketplacePage';
 import PersonaStudio from './components/PersonaStudio';
-import { Toaster } from './hooks/use-toast';
+import { Toaster } from './components/ui/toaster';
 import axios from 'axios';
 import './App.css';
 
