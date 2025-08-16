@@ -33,6 +33,42 @@ export default function ParliamentariumBoard({ user }) {
     { id: 'emergent_llm', name: 'Emergent LLM Key', description: 'Universal Emergent API Key' }
   ];
 
+  // State for persona image generation
+  const [isGeneratingImage, setIsGeneratingImage] = useState({});
+
+  // Generate custom image for persona
+  const generatePersonaImage = async (personaId, personaName) => {
+    if (!user || !['gold', 'vip', 'enterprise'].includes(user.subscription_tier)) {
+      alert('Gold subscription or higher required for persona image generation');
+      return;
+    }
+
+    try {
+      setIsGeneratingImage(prev => ({...prev, [personaId]: true}));
+      
+      const prompt = `${personaName} - mystical AI parliament member, futuristic cyborg design, ethereal and powerful presence, digital art masterpiece`;
+      
+      const response = await axios.post(`${API}/api/generate-persona-image`, {
+        persona_name: personaName,
+        prompt: prompt
+      }, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+
+      if (response.data.success) {
+        alert(`✨ Custom image generated for ${personaName}!\nImage URL: ${response.data.image_url}`);
+        // Optionally update persona display with new image
+      } else {
+        alert(`Failed to generate image: ${response.data.error}`);
+      }
+    } catch (error) {
+      console.error('Error generating persona image:', error);
+      alert('Failed to generate persona image. Please try again.');
+    } finally {
+      setIsGeneratingImage(prev => ({...prev, [personaId]: false}));
+    }
+  };
+
   // Default persona key assignments with fallback order
   const defaultKeyAssignments = {
     "mouse": { primary: 'gemini_1', fallback: ['gemini_2', 'gemini_3', 'gemini_4', 'gemini_5', 'emergent_llm'] },
