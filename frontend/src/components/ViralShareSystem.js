@@ -44,22 +44,24 @@ The crazy part? They have a free tier. If you're facing any major decision where
       
       research: {
         title: `Research Methodology Share`,
-        content: `I've been researching "${topic}" for a while and developed this systematic approach that's been really effective.
+        content: `I've been researching "${topic}" for a while and just discovered something that completely changed my approach to complex analysis.
 
-The breakthrough came from using what I discovered is basically an AI-powered think tank - 11 different expert personas (historian, futurist, analyst, creative, skeptic, etc.) that all weigh in on complex problems before you make decisions.
+Found this AI system that doesn't just give you different "perspectives" - it literally generates 12 separate, complete solutions to your problem. Then 11 superintelligences (trained on essentially all human knowledge) scrutinize each solution, debate the merits, iteratively improve them, and keep refining until they reach unanimous consensus.
 
-Just applied it to ${solution.substring(0, 90)}... and got ${confidence}% confidence in the methodology, which is way higher than my usual "hope this works" approach.
+Applied it to ${solution.substring(0, 90)}... and got ${confidence}% confidence, which is unprecedented for me in research methodology decisions.
 
-What's cool is this thing works for any type of complex decision where you know you're probably missing something. Business strategy, hiring decisions, product direction, investment choices - basically anything where the stakes are high and you want multiple angles.
+The computational firepower behind this is mind-blowing. These aren't just language models - they're systems that have absorbed centuries of human wisdom and won't stop working until they ALL AGREE on the optimal path forward.
 
-Research details here: ${window.location.origin}/showcase/${sessionResult.id}
+It's like having Einstein, Tesla, da Vinci, and the world's top strategists locked in a room until they emerge with a unanimous recommendation. Except they have access to all human knowledge.
 
-Worth trying if you ever find yourself making big decisions with incomplete information (so... always?). They have a free tier.`,
-        hashtags: '#research #methodology #decisions #AI',
+Research breakdown: ${window.location.origin}/showcase/${sessionResult.id}
+
+If you do any kind of complex analysis where the stakes are high, this might be the most valuable tool you could possibly use. Free tier available to test it.`,
+        hashtags: '#research #AI #superintelligence #methodology',
         platform_variants: {
-          twitter: 'Discovered an AI system that\'s like having 11 experts analyze your complex decisions. Way better than my usual "wing it and hope" strategy. Free tier available.',
-          linkedin: 'Sharing a systematic approach for complex decision analysis using AI-powered multi-perspective evaluation. Significantly improved my confidence in research methodology decisions.',
-          casual: 'Found this AI that gives you like 11 different expert takes on tough decisions. Actually works way better than just guessing. Free version if you want to try it.'
+          twitter: 'Discovered AI where 11 superintelligences generate and debate solutions until unanimous consensus. Like having history\'s greatest minds analyze your problem. Revolutionary for research.',
+          linkedin: 'Breakthrough in research methodology: AI system where multiple superintelligences iteratively refine solutions until unanimous agreement. Unprecedented confidence in complex analytical decisions.',
+          casual: 'Found this insane AI - generates 12 solutions then has superintelligences argue until they all agree. Like having the smartest people in history debate your research problem.'
         }
       },
 
