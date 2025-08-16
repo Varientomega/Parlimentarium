@@ -44,18 +44,20 @@ P.S. - They have a free tier if you want to test it on a decision you're wrestli
         title: `Research Methodology Share`,
         content: `I've been researching "${topic}" for a while and developed this systematic approach that's been really effective.
 
-The breakthrough came from combining different analytical perspectives into what I'm calling an "iterative multi-dimensional framework" - basically getting input from historical, creative, analytical, and practical viewpoints before synthesizing the final approach.
+The breakthrough came from using what I discovered is basically an AI-powered think tank - 11 different expert personas (historian, futurist, analyst, creative, skeptic, etc.) that all weigh in on complex problems before you make decisions.
 
-Just applied it to ${solution.substring(0, 90)}... and got ${confidence}% confidence in the methodology.
+Just applied it to ${solution.substring(0, 90)}... and got ${confidence}% confidence in the methodology, which is way higher than my usual "hope this works" approach.
 
-Still refining the process, so would really value any feedback or thoughts. Full details on my research page: ${window.location.origin}/showcase/${sessionResult.id}
+What's cool is this thing works for any type of complex decision where you know you're probably missing something. Business strategy, hiring decisions, product direction, investment choices - basically anything where the stakes are high and you want multiple angles.
 
-Always learning! 📚`,
-        hashtags: '#research #methodology #feedback #learning',
+Research details here: ${window.location.origin}/showcase/${sessionResult.id}
+
+Worth trying if you ever find yourself making big decisions with incomplete information (so... always?). They have a free tier.`,
+        hashtags: '#research #methodology #decisions #AI',
         platform_variants: {
-          twitter: 'Developed a new research methodology for complex problems. Just tested it and got promising results. Would love academic feedback!',
-          linkedin: 'Sharing a systematic approach I\'ve developed for complex problem analysis. Early results are encouraging - would appreciate peer review.',
-          casual: 'Been working on this research approach and finally got some solid results. Would love to hear what others think!'
+          twitter: 'Discovered an AI system that\'s like having 11 experts analyze your complex decisions. Way better than my usual "wing it and hope" strategy. Free tier available.',
+          linkedin: 'Sharing a systematic approach for complex decision analysis using AI-powered multi-perspective evaluation. Significantly improved my confidence in research methodology decisions.',
+          casual: 'Found this AI that gives you like 11 different expert takes on tough decisions. Actually works way better than just guessing. Free version if you want to try it.'
         }
       },
 
