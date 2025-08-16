@@ -91,11 +91,12 @@ function App() {
         <Routes>
           <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage onLogin={handleLogin} />} />
           <Route path="/" element={user ? <ParliamentariumBoard user={user} /> : <Navigate to="/login" replace />} />
-          <Route path="/meeting" element={user ? <MeetingRoom user={user} /> : <Navigate to="/login" replace />} />
+          <Route path="/meeting/:id" element={user ? <MeetingRoom user={user} /> : <Navigate to="/login" replace />} />
           <Route path="/subscription" element={user ? <SubscriptionPage user={user} /> : <Navigate to="/login" replace />} />
           <Route path="/marketplace" element={user ? <MarketplacePage user={user} /> : <Navigate to="/login" replace />} />
-          <Route path="/persona-studio" element={user ? <PersonaStudio user={user} /> : <Navigate to="/login" replace />} />
-          <Route path="/dev-dashboard" element={user && user.is_dev ? <DevDashboard user={user} /> : <Navigate to="/" replace />} />
+          {user && user.is_dev && (
+            <Route path="/dev-dashboard" element={<DevDashboard user={user} />} />
+          )}
           
           <Route path="/subscription/success" element={<SubscriptionSuccess />} />
           <Route path="/subscription/cancel" element={<SubscriptionCancel />} />
